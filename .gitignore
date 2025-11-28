@@ -1,0 +1,18 @@
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+Debug/
+Release/
+[Bb]uild/
+[Tt]est[Rr]esult*/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+*.ide/
+*.ncrunch*
+*.VC.db
+*.vscode/
+*.DS_Store
+Thumbs.db
