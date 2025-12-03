@@ -23,9 +23,9 @@ namespace LedgerLens.Data.Repositories
             cmd.Transaction = tx;
 
             cmd.CommandText = @"
-INSERT INTO GeneralLedger
- (AccountId, YearId, Unix, TDate, Ref, Particulars, Amount, TransactionType, Narration)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                INSERT INTO GeneralLedger
+                 (AccountId, YearId, Unix, TDate, Ref, Particulars, Amount, TransactionType, Narration)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = gl.AccountId });
             cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = gl.YearId });
@@ -89,5 +89,66 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             return o == DBNull.Value ? null : Convert.ToString(o);
         }
 
+        public IEnumerable<ShareBalanceRow> GetShareBalanceRows(int shareId, OleDbTransaction tx)
+        {
+            var list = new List<ShareBalanceRow>();
+
+            using var cmd = tx.Connection!.CreateCommand();
+            cmd.Transaction = tx;
+
+            cmd.CommandText = @"
+                SELECT PurchaseTransId, ShareId, PurchaseDate, Balance, PurchaseRate
+                FROM QryShareBalance
+                WHERE ShareId = ?
+                ORDER BY PurchaseDate";
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Integer,
+                Value = shareId
+            });
+
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
+            {
+                var row = new ShareBalanceRow
+                {
+                    PurchaseTransId = rdr.GetInt32(0),
+                    ShareId = rdr.GetInt32(1),
+                    PurchaseDate = rdr.GetDateTime(2),
+                    Balance = rdr.IsDBNull(3) ? 0m : (decimal)Convert.ToDouble(rdr.GetValue(3)),
+                    PurchaseRate = rdr.IsDBNull(4) ? 0m : (decimal)Convert.ToDouble(rdr.GetValue(4))
+                };
+                list.Add(row);
+            }
+
+            return list;
+        }
+
+        public int InsertShareSale(ShareSale sale, OleDbTransaction tx)
+        {
+            using var cmd = tx.Connection!.CreateCommand();
+            cmd.Transaction = tx;
+
+            cmd.CommandText = @"
+                INSERT INTO ShareSales
+                 (ShareId, PurchaseTransId, QtySold, SellingPrice, TransactionId, Unix)
+                VALUES (?, ?, ?, ?, ?, ?)";
+
+            cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = sale.ShareId });
+            cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = sale.PurchaseTransId });
+            cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Double, Value = (double)sale.QtySold });
+            cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Double, Value = (double)sale.SellingPrice });
+            cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = sale.TransactionId });
+            cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = sale.Unix });
+
+            cmd.ExecuteNonQuery();
+
+            cmd.Parameters.Clear();
+            cmd.CommandText = "SELECT @@IDENTITY";
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
     }
+
 }
+

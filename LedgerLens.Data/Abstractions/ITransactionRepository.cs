@@ -11,9 +11,13 @@ namespace LedgerLens.Data.Abstractions
         // Subledger insert (link to a specific GL TransactionId)
         void InsertSubledgerTrans(SubledgerTrans sub, OleDbTransaction tx);
 
-        // NEW:
+       
         int InsertSharePurchase(SharePurchase sp, OleDbTransaction tx);
         string? GetShareCompanyName(int shareId, OleDbTransaction tx); // optional helper for narration
+
+        // NEW:
+        IEnumerable<ShareBalanceRow> GetShareBalanceRows(int shareId, OleDbTransaction tx);
+        int InsertShareSale(ShareSale sale, OleDbTransaction tx);
     }
 }
 

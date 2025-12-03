@@ -22,5 +22,25 @@ namespace LedgerLens.Services.Abstractions
             string? brokerAccountName = null,   // optional. If null we’ll use “Broker A/c”
             string? companyName = null          // optional. If null we’ll fetch from SharesChart
         );
+
+
+        // NEW: sale (must exactly match your implementation’s signature)
+        Task<int> MakeShareSaleAsync(
+            int shareId,
+            int brokerAccountId,
+            int sharesAccountId,
+            int ltCgAccountId,
+            int stCgAccountId,
+            int ltClAccountId,
+            int stClAccountId,
+            int yearId,
+            DateTime saleDate,
+            decimal qtyToSell,
+            decimal sellingPrice,
+            string reference,
+            string transactionType,
+            string? narrationOverride = null,
+            string? companyName = null);
     }
 }
+
