@@ -5,8 +5,280 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LedgerLens.App"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="LedgerLens 2.0"
+        Height="800"
+        Width="1400"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F172A">
+
+    <Window.Resources>
+
+        <Style x:Key="SidebarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#D1D5DB"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="18,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8">
+
+                            <ContentPresenter VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              Margin="{TemplateBinding Padding}"/>
+
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="#1F2937"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
+                            </Trigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="#2563EB"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SidebarButtonActiveStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource SidebarButtonStyle}">
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="SidebarSectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#6B7280"/>
+            <Setter Property="Margin" Value="0,14,0,10"/>
+        </Style>
+
+    </Window.Resources>
+
     <Grid>
 
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT SIDEBAR -->
+
+        <Border Grid.Column="0"
+                Background="#111827">
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+                <StackPanel Margin="20">
+
+                    <!-- LOGO / TITLE -->
+
+                    <StackPanel Margin="0,5,0,24"
+                                HorizontalAlignment="Center">
+
+                        <Image Source="Assets/LedgerLensTransparentDrawing2.png"
+                               Width="155"
+                               Height="155"
+                               Margin="0,0,0,8"/>
+
+                        <TextBlock Text="LEDGER LENS"
+                                   FontSize="26"
+                                   FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Personal Accounting"
+                                   Margin="0,4,0,0"
+                                   FontSize="13"
+                                   Foreground="#9CA3AF"
+                                   HorizontalAlignment="Center"/>
+
+                    </StackPanel>
+
+                    <!-- INDIVIDUAL INFORMATION -->
+                    <Expander Header="Individual Information"
+                            IsExpanded="False"
+                            Foreground="#D1D5DB"
+                            Margin="0,10,0,0">
+
+                        <StackPanel Margin="0,10,0,0">
+
+                            <Button Content="Select Individual"
+                                Style="{StaticResource SidebarButtonActiveStyle}"/>
+
+                            <Button Content="Close Books"
+                                Style="{StaticResource SidebarButtonStyle}"/>
+
+                        </StackPanel>
+
+                    </Expander>
+
+                    <!-- ACCOUNT INFORMATION -->
+
+                    <Expander Header="ACCOUNT INFORMATION"
+                              IsExpanded="False"
+                              Foreground="#D1D5DB"
+                              Margin="0,10,0,0">
+
+                        <StackPanel Margin="0,10,0,0">
+                            <Button Content="Ledger Accounts"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Companies"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Subledger"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+
+                        </StackPanel>
+
+                    </Expander>
+
+
+
+                    <!-- VOUCHER ENTRY -->
+
+                    <Expander Header="VOUCHER ENTRY"
+                          IsExpanded="False"
+                          Foreground="#D1D5DB"
+                          Margin="0,10,0,0">
+
+                        <StackPanel Margin="0,10,0,0">
+                            <Button Content="Bank Entry"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Journal"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Share Purchase"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Share Sale"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Subledger Journal"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Import Excel"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+
+
+                        </StackPanel>
+
+                    </Expander>
+
+                    <!-- REPORTS -->
+
+                    <Expander Header="REPORTS"
+                          IsExpanded="False"
+                          Foreground="#D1D5DB"
+                          Margin="0,10,0,0">
+
+                        <StackPanel Margin="0,10,0,0">
+
+                            <Button Content="Trial Balance"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Account Ledger"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Full General Ledger"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Share Balance"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Shares at Cost"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Capital Gains"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                            <Button Content="Subledger Trial Balance"
+                            Style="{StaticResource SidebarButtonStyle}"/>
+
+                        </StackPanel>
+
+                    </Expander>
+
+                </StackPanel>
+
+            </ScrollViewer>
+
+        </Border>
+
+        <!-- RIGHT CONTENT AREA -->
+
+        <Grid Grid.Column="1"
+              Background="#0F172A">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+
+            <Border Grid.Row="0"
+                    Background="#111827"
+                    BorderBrush="#1F2937"
+                    BorderThickness="0,0,0,1">
+
+                <TextBlock Text="Select Individual"
+                           Margin="30,0,0,0"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+
+            </Border>
+
+            <!-- MAIN WORKSPACE -->
+
+            <Grid Grid.Row="1"
+                  Margin="30">
+
+                <Border Background="#111827"
+                        CornerRadius="14"
+                        BorderBrush="#1F2937"
+                        BorderThickness="1">
+
+                    <ContentControl x:Name="ContentArea"/>
+
+                </Border>
+
+            </Grid>
+
+        </Grid>
+
     </Grid>
+
 </Window>

@@ -8,7 +8,14 @@
   </PropertyGroup>
   <PropertyGroup>
 	<PlatformTarget>x64</PlatformTarget>
+	<ApplicationIcon>Assets\LLIcon256x256.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Assets\LedgerLensTransparentDrawing2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\LLIcon256x256.ico" />
+  </ItemGroup>
 
 	<ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
@@ -18,5 +25,9 @@
 
 	<ItemGroup>
 	  <Folder Include="Models\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Assets\LedgerLensTransparentDrawing2.png" />
 	</ItemGroup>
 </Project>
