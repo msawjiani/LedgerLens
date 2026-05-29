@@ -84,7 +84,7 @@
     <Grid>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="270"/>
+            <ColumnDefinition Width="230"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -133,7 +133,8 @@
 
                         <StackPanel Margin="0,10,0,0">
                             <Button Content="Select Individual"
-                                Style="{StaticResource SidebarButtonActiveStyle}"/>
+                                Style="{StaticResource SidebarButtonStyle}"
+                                Click="SelectIndividual_Click"/>
 
                             <Button Content="Close Books"
                                 Style="{StaticResource SidebarButtonStyle}"/>
