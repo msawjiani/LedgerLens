@@ -1,0 +1,65 @@
+﻿<UserControl x:Class="LedgerLens.App.Views.SelectYearView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#111827">
+
+    <Grid Margin="28">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,20">
+
+            <TextBlock Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="White"/>
+
+            <TextBlock Text="Double-click an accounting year to open books"
+                       Margin="0,6,0,0"
+                       FontSize="14"
+                       Foreground="#9CA3AF"/>
+
+        </StackPanel>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding AccountingYears}"
+                  SelectedItem="{Binding SelectedYear}"
+                  MouseDoubleClick="DataGrid_MouseDoubleClick"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  Background="#0F172A"
+                  Foreground="White"
+                  RowBackground="#111827"
+                  AlternatingRowBackground="#0F172A"
+                  BorderBrush="#1F2937"
+                  BorderThickness="1"
+                  FontSize="15">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Year ID"
+                                    Binding="{Binding YearId}"
+                                    Width="120"/>
+
+                <DataGridTextColumn Header="Start Date"
+                                    Binding="{Binding StartDate, StringFormat=dd-MMM-yyyy}"
+                                    Width="180"/>
+
+                <DataGridTextColumn Header="End Date"
+                                    Binding="{Binding EndDate, StringFormat=dd-MMM-yyyy}"
+                                    Width="180"/>
+
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+    </Grid>
+
+</UserControl>

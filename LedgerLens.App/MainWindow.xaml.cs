@@ -1,5 +1,9 @@
 ﻿using LedgerLens.App.Session;
 using LedgerLens.App.ViewModels;
+using LedgerLens.App.Views;
+using LedgerLens.Data;
+using LedgerLens.Data.Repositories;
+using Microsoft.Extensions.Options;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,9 +14,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using LedgerLens.Data;
-using LedgerLens.Data.Repositories;
-using Microsoft.Extensions.Options;
 
 namespace LedgerLens.App;
 
@@ -68,8 +69,47 @@ public partial class MainWindow : Window
 
             SessionContext.IndividualName = individual.IndividualName;
             SessionContext.PAN = individual.PANNumber;
+            var accountYearRepository = new AccountYearRepository(factory);
 
-            MessageBox.Show($"Loaded: {SessionContext.PAN}");
+            var years = accountYearRepository.GetAccountingYears();
+
+            if (years.Count == 0)
+            {
+                MessageBox.Show("No accounting years found in this database.");
+                return;
+            }
+
+            var latestYear = years[^1];
+
+            SessionContext.MaxYearId = latestYear.YearId;
+            SessionContext.SelectedYearId = latestYear.YearId;
+            SessionContext.SelectedStartDate = latestYear.StartDate;
+            SessionContext.SelectedEndDate = latestYear.EndDate;
+            SessionContext.InterestAccountCode = individual.InterestAccountCode;
+            SessionContext.InterestAccountDesc = individual.InterestAccountDesc;
+
+            SessionContext.LTCGAccountCode = individual.LTCGAccountCode;
+            SessionContext.LTCGAccountDesc = individual.LTCGAccountDesc;
+
+            SessionContext.STCGAccountCode = individual.STCGAccountCode;
+            SessionContext.STCGAccountDesc = individual.STCGAccountDesc;
+
+            SessionContext.LTCLAccountCode = individual.LTCLAccountCode;
+            SessionContext.LTCLAccountDesc = individual.LTCLAccountDesc;
+
+            SessionContext.STCLAccountCode = individual.STCLAccountCode;
+            SessionContext.STCLAccountDesc = individual.STCLAccountDesc;
+
+            SessionContext.RetainedEarningsId = individual.RetainedEarningsId;
+
+            var selectYearView = new SelectYearView
+            {
+                DataContext = new SelectYearViewModel(years)
+            };
+
+            ContentArea.Content = selectYearView;
+
+
 
         }
     }
