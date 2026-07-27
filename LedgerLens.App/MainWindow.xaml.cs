@@ -113,4 +113,23 @@ public partial class MainWindow : Window
 
         }
     }
+
+    private void LedgerAccounts_Click(object sender, RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var repository = new LedgerAccountRepository(factory);
+
+        var view = new LedgerAccountsView
+        {
+            DataContext = new LedgerAccountsViewModel(repository)
+        };
+
+        ContentArea.Content = view;
+    }
 }

@@ -160,7 +160,8 @@
                         <StackPanel Margin="0,10,0,0">
                             <!-- buttons here -->
                             <Button Content="Ledger Accounts"
-                            Style="{StaticResource SidebarButtonStyle}"/>
+                                Style="{StaticResource SidebarButtonStyle}"
+                                Click="LedgerAccounts_Click"/>
 
                             <Button Content="Companies"
                             Style="{StaticResource SidebarButtonStyle}"/>
