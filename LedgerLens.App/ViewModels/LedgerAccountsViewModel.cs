@@ -136,6 +136,44 @@ namespace LedgerLens.App.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
+        private string? ValidateLedgerAccount()
+        {
+            if (EditingAccount == null)
+                return "Please select an account or click New.";
+
+            if (string.IsNullOrWhiteSpace(EditingAccount.Account))
+                return "Account name is required.";
+
+            if (string.IsNullOrWhiteSpace(EditingAccount.Category))
+                return "Please select a category.";
+
+            if (string.IsNullOrWhiteSpace(EditingAccount.SubledgerFlag))
+                return "Please select a Subledger Flag.";
+
+            if (string.IsNullOrWhiteSpace(EditingAccount.DashboardGroup))
+                return "Please select a Dashboard Group.";
+
+            if (EditingAccount.Category == "PL" &&
+                EditingAccount.SubledgerFlag != "NO")
+            {
+                return "Profit and Loss accounts must have Subledger Flag set to NO.";
+            }
+
+            if (EditingAccount.Category == "BANK" &&
+                EditingAccount.SubledgerFlag != "NO")
+            {
+                return "Bank accounts must have Subledger Flag set to NO.";
+            }
+
+            if (EditingAccount.Category == "RE" &&
+                EditingAccount.SubledgerFlag != "NO")
+            {
+                return "Retained Earnings must have Subledger Flag set to NO.";
+            }
+
+            return null;
+        }
         public void NewAccount()
         {
             SelectedAccount = null;
@@ -158,6 +196,19 @@ namespace LedgerLens.App.ViewModels
                     "LedgerLens",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
+
+                return;
+            }
+
+            var validationMessage = ValidateLedgerAccount();
+
+            if (validationMessage != null)
+            {
+                MessageBox.Show(
+                    validationMessage,
+                    "Invalid Ledger Account",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
                 return;
             }
@@ -259,5 +310,7 @@ namespace LedgerLens.App.ViewModels
                             StringComparison.OrdinalIgnoreCase));
             }
         }
+
+
     }
 }
