@@ -132,4 +132,48 @@ public partial class MainWindow : Window
 
         ContentArea.Content = view;
     }
+
+    private void Companies_Click(object sender, RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var companyRepository = new CompanyRepository(factory);
+        var ledgerAccountRepository = new LedgerAccountRepository(factory);
+
+        var view = new CompaniesView
+        {
+            DataContext = new CompaniesViewModel(
+                companyRepository,
+                ledgerAccountRepository)
+        };
+
+        ContentArea.Content = view;
+    }
+
+    private void Subledger_Click(object sender, RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var subledgerRepository = new SubledgerRepository(factory);
+        var ledgerAccountRepository = new LedgerAccountRepository(factory);
+
+        var view = new SubledgerView
+        {
+            DataContext = new SubledgerViewModel(
+                subledgerRepository,
+                ledgerAccountRepository)
+        };
+
+        ContentArea.Content = view;
+    }
 }

@@ -31,4 +31,12 @@
 	<ItemGroup>
 	  <Resource Include="Assets\LedgerLensTransparentDrawing2.png" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <EditorConfigFiles Remove="D:\repos\NewLedgerLens\LedgerLens.App\Views\.editorconfig" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="D:\repos\NewLedgerLens\LedgerLens.App\Views\.editorconfig" />
+	</ItemGroup>
 </Project>

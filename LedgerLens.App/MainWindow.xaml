@@ -164,9 +164,11 @@
                                 Click="LedgerAccounts_Click"/>
 
                             <Button Content="Companies"
-                            Style="{StaticResource SidebarButtonStyle}"/>
+                            Style="{StaticResource SidebarButtonStyle}"
+                             Click="Companies_Click"/>
 
                             <Button Content="Subledger"
+                            Click="Subledger_Click"
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                         </StackPanel>
