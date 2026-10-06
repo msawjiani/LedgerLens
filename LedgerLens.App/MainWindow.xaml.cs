@@ -113,7 +113,30 @@ public partial class MainWindow : Window
 
         }
     }
+    private void BankEntry_Click(object sender, RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
 
+        var factory = new OleDbConnectionFactory(options);
+
+        var ledgerAccountRepository =
+            new LedgerAccountRepository(factory);
+
+        var transactionRepository =
+            new TransactionRepository(factory);
+
+        var view = new BankEntryView
+        {
+            DataContext = new BankEntryViewModel(
+                ledgerAccountRepository,
+                transactionRepository)
+        };
+
+        ContentArea.Content = view;
+    }
     private void LedgerAccounts_Click(object sender, RoutedEventArgs e)
     {
         var options = Options.Create(new OleDbOptions

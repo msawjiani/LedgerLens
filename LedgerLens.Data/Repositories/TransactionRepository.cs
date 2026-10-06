@@ -7,6 +7,12 @@ namespace LedgerLens.Data.Repositories
 {
     public sealed class TransactionRepository : ITransactionRepository
     {
+        private readonly IConnectionFactory _connectionFactory;
+
+        public TransactionRepository(IConnectionFactory connectionFactory)
+        {
+            _connectionFactory = connectionFactory;
+        }
         public long GetNextUnix(OleDbTransaction tx)
         {
             using var cmd = tx.Connection!.CreateCommand();
@@ -87,6 +93,59 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             cmd.Parameters.Add(new OleDbParameter { OleDbType = OleDbType.Integer, Value = shareId });
             var o = cmd.ExecuteScalar();
             return o == DBNull.Value ? null : Convert.ToString(o);
+        }
+
+        public List<BankEntryRow> GetBankEntries(int accountId, int yearId)
+        {
+            var entries = new List<BankEntryRow>();
+
+            using var connection = _connectionFactory.CreateOpen();
+            using var command = connection.CreateCommand();
+
+            command.CommandText =
+                """
+        SELECT
+            TransactionId,
+            AccountId,
+            Unix,
+            TDate,
+            Ref,
+            Particulars,
+            Amount,
+            Narration
+        FROM GeneralLedger
+        WHERE AccountId = ?
+          AND YearId = ?
+        ORDER BY TDate, Unix
+        """;
+
+            var accountParameter = command.CreateParameter();
+            accountParameter.Value = accountId;
+            command.Parameters.Add(accountParameter);
+
+            var yearParameter = command.CreateParameter();
+            yearParameter.Value = yearId;
+            command.Parameters.Add(yearParameter);
+
+            using var reader = command.ExecuteReader();
+
+            while (reader!.Read())
+            {
+                entries.Add(new BankEntryRow
+                {
+                    TransactionId = reader.GetInt32(0),
+                    AccountId = reader.GetInt32(1),
+                    Unix = reader.GetInt32(2),
+                    TDate = reader.GetDateTime(3),
+                    Ref = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                    Particulars = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                    Amount = reader.GetDecimal(6),
+                    Narration = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
+                    RunningBalance = 0M
+                });
+            }
+
+            return entries;
         }
 
     }

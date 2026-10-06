@@ -1,11 +1,13 @@
 ﻿using System.Data.OleDb;
 using LedgerLens.Data.Models;
 
+
 namespace LedgerLens.Data.Abstractions
 {
     public interface ITransactionRepository
     {
         int InsertGeneralLedger(GeneralLedger gl, OleDbTransaction tx);
+        List<BankEntryRow> GetBankEntries(int accountId, int yearId);
         long GetNextUnix(OleDbTransaction tx);
 
         // Subledger insert (link to a specific GL TransactionId)
