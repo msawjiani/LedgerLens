@@ -23,13 +23,15 @@
         <!-- Bank selection -->
         <Grid Grid.Row="1"
               Margin="0,0,0,20">
-
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="320"/>
-                <ColumnDefinition Width="40"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="125"/>
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="130"/>
                 <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="55"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="90"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
@@ -69,13 +71,16 @@
 
             <Grid>
                 <Grid.ColumnDefinitions>
+
                     <ColumnDefinition Width="125"/>
                     <ColumnDefinition Width="120"/>
                     <ColumnDefinition Width="2*"/>
                     <ColumnDefinition Width="130"/>
                     <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="55"/>
                     <ColumnDefinition Width="2*"/>
                     <ColumnDefinition Width="90"/>
+
                 </Grid.ColumnDefinitions>
 
                 <!-- Date -->
@@ -86,8 +91,8 @@
                        Margin="0,0,0,5"/>
 
                     <TextBox Height="32"
-                     Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"
-                     VerticalContentAlignment="Center"/>    
+                             Text="{Binding EntryDate, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalContentAlignment="Center"/>        
                 </StackPanel>
 
                 <!-- Reference -->
@@ -101,7 +106,8 @@
                          VerticalContentAlignment="Center"/>    
                 </StackPanel>
 
-                <!-- Account -->
+                
+                
                 <!-- Account -->
                 <StackPanel Grid.Column="2"
             Margin="0,0,12,0">
@@ -110,45 +116,43 @@
                Foreground="#CCCCCC"
                Margin="0,0,0,5"/>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <ComboBox Height="32"
+                          ItemsSource="{Binding GLAccounts}"
+                          SelectedItem="{Binding SelectedGLAccount}"
+                          DisplayMemberPath="Account"
+                          IsEditable="True"
+                          IsTextSearchEnabled="True"
+                          VerticalContentAlignment="Center"/>
 
-                        <ComboBox Grid.Column="0"
-                  Height="32"
-                  ItemsSource="{Binding GLAccounts}"
-                  SelectedItem="{Binding SelectedGLAccount}"
-                  DisplayMemberPath="Account"
-                  IsEditable="True"
-                  IsTextSearchEnabled="True"
-                  VerticalContentAlignment="Center"/>
+                </StackPanel>
+                <!-- Subledger -->
+                <StackPanel Grid.Column="5">
 
-                        <Button Grid.Column="1"
-                Content="SL"
-                Width="42"
-                Height="32"
-                Margin="6,0,0,0">
+                    <!-- Blank label keeps button aligned with other inputs -->
+                    <TextBlock Text=" "
+               Margin="0,0,0,5"/>
 
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Visibility"
-                            Value="Collapsed"/>
+                    <Button Content="SL"
+            Width="42"
+            Height="32"
+            HorizontalAlignment="Left">
 
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding ShowSubledgerButton}"
-                                     Value="True">
-                                            <Setter Property="Visibility"
-                                    Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Visibility"
+                        Value="Collapsed"/>
 
-                        </Button>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowSubledgerButton}"
+                                 Value="True">
+                                        <Setter Property="Visibility"
+                                Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
 
-                    </Grid>
+                    </Button>
 
                 </StackPanel>
                 <!-- Amount -->
@@ -189,7 +193,7 @@
                 </StackPanel>
 
                 <!-- Narration -->
-                <StackPanel Grid.Column="5"
+                <StackPanel Grid.Column="6"
                     Margin="0,0,12,0">
                     <TextBlock Text="Narration"
                        Foreground="#CCCCCC"
@@ -201,11 +205,12 @@
                 </StackPanel>
 
                 <!-- Save -->
-                <StackPanel Grid.Column="6">
+                <StackPanel Grid.Column="7">
                     <TextBlock Text=" "
                        Margin="0,0,0,5"/>
 
                     <Button Content="SAVE"
+                     Click="Save_Click"
                     Height="32"
                     FontWeight="SemiBold"/>
                 </StackPanel>

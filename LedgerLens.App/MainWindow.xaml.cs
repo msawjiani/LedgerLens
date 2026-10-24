@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using LedgerLens.Services;
 
 namespace LedgerLens.App;
 
@@ -128,11 +129,16 @@ public partial class MainWindow : Window
         var transactionRepository =
             new TransactionRepository(factory);
 
+        // Accounting service
+        var bankEntryService =
+            new BankEntryService(factory, transactionRepository);
+
         var view = new BankEntryView
         {
             DataContext = new BankEntryViewModel(
                 ledgerAccountRepository,
-                transactionRepository)
+                transactionRepository,
+                bankEntryService)
         };
 
         ContentArea.Content = view;
