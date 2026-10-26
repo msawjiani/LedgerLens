@@ -115,15 +115,17 @@
                     <TextBlock Text="Account"
                Foreground="#CCCCCC"
                Margin="0,0,0,5"/>
-
-                    <ComboBox Height="32"
-                          ItemsSource="{Binding GLAccounts}"
-                          SelectedItem="{Binding SelectedGLAccount}"
+                    <ComboBox x:Name="GLAccountCombo"
+                          Height="32"
+                          ItemsSource="{Binding GLAccountsView}"
+                          SelectedItem="{Binding SelectedGLAccount, Mode=TwoWay}"
+                          Loaded="GLAccountCombo_Loaded"    
                           DisplayMemberPath="Account"
                           IsEditable="True"
-                          IsTextSearchEnabled="True"
+                          IsTextSearchEnabled="False"
+                          StaysOpenOnEdit="True"
+                          IsSynchronizedWithCurrentItem="False"
                           VerticalContentAlignment="Center"/>
-
                 </StackPanel>
                 <!-- Subledger -->
                 <StackPanel Grid.Column="5">

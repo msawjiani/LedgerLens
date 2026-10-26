@@ -8,6 +8,10 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Globalization;
 using System.Threading.Tasks;
+using System.Windows.Data;
+
+
+
 namespace LedgerLens.App.ViewModels
 {
     public sealed class BankEntryViewModel : INotifyPropertyChanged
@@ -18,6 +22,15 @@ namespace LedgerLens.App.ViewModels
 
         public List<LedgerAccount> BankAccounts { get; }
         public List<LedgerAccount> GLAccounts { get; }
+        public ICollectionView GLAccountsView { get; }
+
+        private string _glSearchText = string.Empty;
+
+        public void FilterGLAccounts(string searchText)
+        {
+            _glSearchText = searchText ?? string.Empty;
+            GLAccountsView.Refresh();
+        }
 
         private LedgerAccount? _selectedBank;
         public LedgerAccount? SelectedBank
@@ -164,6 +177,18 @@ namespace LedgerLens.App.ViewModels
                 .GetAll()
                 .OrderBy(a => a.Account)
                 .ToList();
+            GLAccountsView = CollectionViewSource.GetDefaultView(GLAccounts);
+
+            GLAccountsView.Filter = item =>
+            {
+                if (item is not LedgerAccount account)
+                    return false;
+
+                return string.IsNullOrWhiteSpace(_glSearchText)
+                    || account.Account.Contains(
+                        _glSearchText,
+                        StringComparison.OrdinalIgnoreCase);
+            };
         }
         public bool ValidateEntryDate(out string errorMessage)
         {
@@ -215,7 +240,106 @@ namespace LedgerLens.App.ViewModels
             // 5. All checks passed
             return true;
         }
+        public void IncrementDate()
+        {
+            if (!ValidateEntryDate(out string errorMessage))
+            {
+                MessageBox.Show(
+                    errorMessage,
+                    "Invalid Date",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
 
+            string[] formats = { "d-MMM-yyyy", "dd-MMM-yyyy" };
+
+            DateTime currentDate = DateTime.ParseExact(
+                EntryDate.Trim(),
+                formats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None);
+
+            DateTime nextDate = currentDate.AddDays(1);
+
+            if (nextDate.Date > SessionContext.SelectedEndDate.Date)
+            {
+                MessageBox.Show(
+                    "Cannot increment beyond the accounting year.",
+                    "Date Increment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            EntryDate = nextDate.ToString(
+                "dd-MMM-yyyy",
+                CultureInfo.InvariantCulture);
+        }
+        public void IncrementReference()
+        {
+            string reference = Reference?.Trim() ?? "";
+
+            if (string.IsNullOrEmpty(reference))
+            {
+                MessageBox.Show(
+                    "Please enter a Reference first.",
+                    "Reference Increment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            int position = reference.Length;
+
+            // Find the numeric suffix
+            while (position > 0 && char.IsDigit(reference[position - 1]))
+            {
+                position--;
+            }
+
+            if (position == reference.Length)
+            {
+                MessageBox.Show(
+                    "Reference must end with a number.",
+                    "Reference Increment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            string prefix = reference[..position];
+            string numberPart = reference[position..];
+
+            if (!long.TryParse(numberPart, out long number) ||
+                number == long.MaxValue)
+            {
+                MessageBox.Show(
+                    "Reference number cannot be incremented.",
+                    "Reference Increment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            string nextNumber = (number + 1)
+                .ToString()
+                .PadLeft(numberPart.Length, '0');
+
+            string nextReference = prefix + nextNumber;
+
+            if (nextReference.Length > 20)
+            {
+                MessageBox.Show(
+                    "Reference cannot exceed 20 characters.",
+                    "Reference Increment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            Reference = nextReference;
+        }
         public bool ValidateReference(out string errorMessage)
         {
             errorMessage = string.Empty;
@@ -350,6 +474,85 @@ namespace LedgerLens.App.ViewModels
                 return (false, $"Unable to save Receipt: {ex.Message}");
             }
         }
+        public async Task<(bool Success, string Message)> SavePaymentAsync()
+        {
+            if (!ValidateEntryDate(out string dateError))
+                return (false, dateError);
+
+            if (!ValidateReference(out string referenceError))
+                return (false, referenceError);
+
+            if (SelectedBank == null)
+                return (false, "Please select a Bank / Cash Account.");
+
+            if (SelectedGLAccount == null)
+                return (false, "Please select a Ledger Account.");
+
+            if (SelectedBank.AccountId == SelectedGLAccount.AccountId)
+                return (false, "Bank and Ledger Account cannot be the same.");
+
+            // Subledger and Share transactions will use separate workflows.
+            if (SelectedGLAccount.SubledgerFlag == "SL" ||
+                SelectedGLAccount.SubledgerFlag == "SH")
+            {
+                return (false,
+                    "Subledger and Share transactions are not yet supported here.");
+            }
+
+            if (!IsPayment || IsReceipt)
+                return (false, "Please select Payment.");
+
+            if (!decimal.TryParse(
+                    Amount,
+                    NumberStyles.Number,
+                    CultureInfo.CurrentCulture,
+                    out decimal amount) || amount <= 0)
+            {
+                return (false, "Please enter a valid positive Amount.");
+            }
+
+            if (string.IsNullOrWhiteSpace(Narration) ||
+                Narration.Trim().Equals(
+                    "Being",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "Please enter a Narration.");
+            }
+
+            string[] formats = { "d-MMM-yyyy", "dd-MMM-yyyy" };
+
+            DateTime transactionDate = DateTime.ParseExact(
+                EntryDate.Trim(),
+                formats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None);
+
+            try
+            {
+                await _bankEntryService.MakePaymentAsync(
+                    SelectedBank.AccountId,
+                    SelectedBank.Account,
+                    SelectedGLAccount.AccountId,
+                    SelectedGLAccount.Account,
+                    SessionContext.SelectedYearId,
+                    transactionDate,
+                    amount,
+                    Reference.Trim(),
+                    Narration.Trim());
+
+                LoadSelectedBank();
+
+                Amount = string.Empty;
+                Narration = "Being ";
+
+                return (true, "Payment saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Unable to save Payment: {ex.Message}");
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void OnPropertyChanged(

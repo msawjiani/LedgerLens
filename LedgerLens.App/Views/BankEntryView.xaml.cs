@@ -14,6 +14,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using System.Windows.Controls.Primitives;
+
+
+
 
 namespace LedgerLens.App.Views
 {
@@ -25,28 +29,91 @@ namespace LedgerLens.App.Views
         public BankEntryView()
         {
             InitializeComponent();
+            PreviewKeyDown += BankEntryView_PreviewKeyDown;
+        }
+        private void BankEntryView_PreviewKeyDown(
+                                                    object sender,
+                                                    KeyEventArgs e)
+        {
+            if (DataContext is not BankEntryViewModel vm)
+                return;
+
+            if (e.Key == Key.F2)
+            {
+                vm.IncrementDate();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.F3)
+            {
+                vm.IncrementReference();
+                e.Handled = true;
+            }
+        }
+        private void GLAccountCombo_Loaded(
+    object sender,
+    RoutedEventArgs e)
+        {
+            if (GLAccountCombo.Template.FindName(
+                "PART_EditableTextBox",
+                GLAccountCombo) is TextBox textBox)
+            {
+                textBox.TextChanged -= GLAccountSearch_TextChanged;
+                textBox.TextChanged += GLAccountSearch_TextChanged;
+            }
+        }
+
+        private void GLAccountSearch_TextChanged(
+      object sender,
+      TextChangedEventArgs e)
+        {
+            if (DataContext is not BankEntryViewModel vm)
+                return;
+
+            if (sender is not TextBox textBox)
+                return;
+
+            string searchText = textBox.Text;
+
+            // If the displayed text matches the selected account,
+            // this is not a new search.
+            if (vm.SelectedGLAccount != null &&
+                string.Equals(
+                    searchText,
+                    vm.SelectedGLAccount.Account,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            // Otherwise, invalidate the previous selection.
+            vm.SelectedGLAccount = null;
+
+            vm.FilterGLAccounts(searchText);
+
+            GLAccountCombo.IsDropDownOpen = true;
         }
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is not BankEntryViewModel vm)
                 return;
 
-            if (!vm.IsReceipt)
+            if (!vm.IsReceipt && !vm.IsPayment)
             {
                 MessageBox.Show(
-                    "Only Receipt posting is enabled at this stage.",
+                    "Please select Receipt or Payment.",
                     "Bank Entry",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-
+                    MessageBoxImage.Warning);
                 return;
             }
 
-            var result = await vm.SaveReceiptAsync();
+            var result = vm.IsReceipt
+                ? await vm.SaveReceiptAsync()
+                : await vm.SavePaymentAsync();
 
             MessageBox.Show(
                 result.Message,
-                result.Success ? "Receipt Saved" : "Validation / Save Error",
+                result.Success ? "Entry Saved" : "Validation / Save Error",
                 MessageBoxButton.OK,
                 result.Success
                     ? MessageBoxImage.Information
