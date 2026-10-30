@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using LedgerLens.Data.Repositories;
 
 using System.Windows.Controls.Primitives;
 
@@ -26,6 +27,7 @@ namespace LedgerLens.App.Views
     /// </summary>
     public partial class BankEntryView : UserControl
     {
+        public SubledgerRepository? SubledgerRepository { get; set; }
         public BankEntryView()
         {
             InitializeComponent();
@@ -91,6 +93,36 @@ namespace LedgerLens.App.Views
             vm.FilterGLAccounts(searchText);
 
             GLAccountCombo.IsDropDownOpen = true;
+        }
+
+        private void Subledger_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not BankEntryViewModel vm)
+                return;
+
+            if (vm.SelectedGLAccount == null)
+                return;
+
+            if (SubledgerRepository == null)
+            {
+                MessageBox.Show(
+                    "Subledger repository is not available.",
+                    "FD Selection",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var window = new FDSelectionWindow(
+                vm.SelectedGLAccount.AccountId,
+                vm.SelectedGLAccount.Account,
+                SubledgerRepository)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            window.ShowDialog();
         }
         private async void Save_Click(object sender, RoutedEventArgs e)
         {

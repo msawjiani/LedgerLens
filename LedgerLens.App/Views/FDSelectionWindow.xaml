@@ -1,0 +1,83 @@
+﻿<Window x:Class="LedgerLens.App.Views.FDSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fixed Deposit Selection"
+        Height="450"
+        Width="650"
+        MinHeight="350"
+        MinWidth="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="#121212"
+        Closing="Window_Closing">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Heading -->
+        <StackPanel Grid.Row="0"
+            Margin="0,0,0,20">
+
+            <TextBlock Text="Fixed Deposit Selection"
+               FontSize="22"
+               FontWeight="SemiBold"
+               Foreground="White"/>
+
+            <TextBlock x:Name="GLAccountNameText"
+               Text="GL Account:"
+               FontSize="14"
+               Foreground="#AAAAAA"
+               Margin="0,8,0,0"/>
+
+        </StackPanel>
+        <!-- Fixed Deposit List -->
+        <DataGrid x:Name="FDGrid"
+          Grid.Row="1"
+          AutoGenerateColumns="False"
+          IsReadOnly="True"
+          SelectionMode="Single"
+          SelectionUnit="FullRow"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          HeadersVisibility="Column"
+          Background="#1E1E1E"
+          Foreground="Black"
+          BorderBrush="#333333"
+          BorderThickness="1"
+          RowHeight="32"
+          ColumnHeaderHeight="36">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Particulars"
+                            Binding="{Binding Subaccount}"
+                            Width="*"/>
+
+                <DataGridTextColumn Header="FD Balance"
+                            Binding="{Binding TotalFD, StringFormat={}{0:N2}}"
+                            Width="160"/>
+
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+
+            <Button Content="Close"
+                    Width="100"
+                    Height="34"
+                    Click="Close_Click"/>
+
+        </StackPanel>
+
+    </Grid>
+</Window>

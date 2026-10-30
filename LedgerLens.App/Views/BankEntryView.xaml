@@ -135,9 +135,10 @@
                Margin="0,0,0,5"/>
 
                     <Button Content="SL"
-            Width="42"
-            Height="32"
-            HorizontalAlignment="Left">
+                        Width="42"
+                        Height="32"
+                        Click="Subledger_Click"
+                        HorizontalAlignment="Left">
 
                         <Button.Style>
                             <Style TargetType="Button">

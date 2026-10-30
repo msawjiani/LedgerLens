@@ -129,12 +129,17 @@ public partial class MainWindow : Window
         var transactionRepository =
             new TransactionRepository(factory);
 
+        var subledgerRepository =
+            new SubledgerRepository(factory);
+
         // Accounting service
         var bankEntryService =
             new BankEntryService(factory, transactionRepository);
 
         var view = new BankEntryView
         {
+            SubledgerRepository = subledgerRepository,
+
             DataContext = new BankEntryViewModel(
                 ledgerAccountRepository,
                 transactionRepository,

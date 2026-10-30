@@ -29,12 +29,12 @@ namespace LedgerLens.Data.Repositories
                 using var command = connection.CreateCommand();
 
                 command.CommandText =
-                """
-            SELECT SubledgerId, AccountId, Subaccount
-            FROM SubledgerChart
-            WHERE AccountId = ?
-            ORDER BY Subaccount
-            """;
+                        """
+                    SELECT SubledgerId, AccountId, Subaccount
+                    FROM SubledgerChart
+                    WHERE AccountId = ?
+                    ORDER BY Subaccount
+                    """;
 
                 var accountParameter = command.CreateParameter();
                 accountParameter.Value = accountId;
@@ -55,7 +55,46 @@ namespace LedgerLens.Data.Repositories
                 return subledgers;
             }
 
-            public void Add(Subledger subledger)
+        public List<FDBalance> GetActiveFDBalances(int accountId)
+        {
+            var balances = new List<FDBalance>();
+
+            using var connection = _connectionFactory.CreateOpen();
+            using var command = connection.CreateCommand();
+
+            command.CommandText =
+                """
+                SELECT SubledgerId, Subaccount, TotalFD
+                FROM QrySubledgerChart
+                WHERE AccountId = ?
+                  AND Active = 'Y'
+                ORDER BY Subaccount
+                """;
+
+            var parameter = command.CreateParameter();
+            parameter.Value = accountId;
+            command.Parameters.Add(parameter);
+
+            using var reader = command.ExecuteReader();
+
+            while (reader != null && reader.Read())
+            {
+                balances.Add(new FDBalance
+                {
+                    SubledgerId = Convert.ToInt32(reader["SubledgerId"]),
+
+                    Subaccount = reader["Subaccount"]?.ToString() ?? "",
+
+                    TotalFD = reader["TotalFD"] == DBNull.Value
+                        ? 0m
+                        : Convert.ToDecimal(reader["TotalFD"])
+                });
+            }
+
+            return balances;
+        }
+
+        public void Add(Subledger subledger)
             {
                 using var connection = _connectionFactory.CreateOpen();
                 using var command = connection.CreateCommand();
