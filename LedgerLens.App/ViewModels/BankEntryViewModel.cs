@@ -474,7 +474,8 @@ namespace LedgerLens.App.ViewModels
                 return (false, $"Unable to save Receipt: {ex.Message}");
             }
         }
-        public async Task<(bool Success, string Message)> SavePaymentAsync()
+        public async Task<(bool Success, string Message)> SavePaymentAsync(
+                            int? subledgerId = null)
         {
             if (!ValidateEntryDate(out string dateError))
                 return (false, dateError);
@@ -492,13 +493,17 @@ namespace LedgerLens.App.ViewModels
                 return (false, "Bank and Ledger Account cannot be the same.");
 
             // Subledger and Share transactions will use separate workflows.
-            if (SelectedGLAccount.SubledgerFlag == "SL" ||
-                SelectedGLAccount.SubledgerFlag == "SH")
+            // Share transactions are not yet supported.
+            if (SelectedGLAccount.SubledgerFlag == "SH")
             {
-                return (false,
-                    "Subledger and Share transactions are not yet supported here.");
+                return (false, "Share transactions are not yet supported here.");
             }
 
+            // Subledger transactions require an FD selection.
+            if (SelectedGLAccount.SubledgerFlag == "SL" && subledgerId == null)
+            {
+                return (false, "Please select a Fixed Deposit before saving.");
+            }
             if (!IsPayment || IsReceipt)
                 return (false, "Please select Payment.");
 
@@ -538,7 +543,8 @@ namespace LedgerLens.App.ViewModels
                     transactionDate,
                     amount,
                     Reference.Trim(),
-                    Narration.Trim());
+                    Narration.Trim(),
+                    subledgerId);
 
                 LoadSelectedBank();
 

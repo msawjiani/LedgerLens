@@ -23,12 +23,12 @@ namespace LedgerLens.Services
         private static string Minus(decimal a) => $"-{a.ToString("N2", CultureInfo.InvariantCulture)}";
 
         public Task<(int debitId, int creditId)> MakePaymentAsync(
-    int bankId, string bankName,
-    int toId, string toName,
-    int yearId, DateTime tdate, decimal amount,
-    string reference, string narration,
-    int? subledgerId = null)
-        {
+                    int bankId, string bankName,
+                    int toId, string toName,
+                    int yearId, DateTime tdate, decimal amount,
+                    string reference, string narration,
+                    int? subledgerId = null)
+            {
             // Payment semantics:
             //   Other Dr  (positive)   -> "To Bank (+amt)"
             //   Bank  Cr  (negative)   -> "By Other (-amt)"
@@ -192,9 +192,9 @@ namespace LedgerLens.Services
             }
         }
         private Task<(int debitId, int creditId)> PostPaymentWithSubledgerAsync(
-    GeneralLedger otherDr,
-    GeneralLedger bankCr,
-    int subledgerId)
+                                                    GeneralLedger otherDr,
+                                                    GeneralLedger bankCr,
+                                                    int subledgerId)
         {
             using var con = _factory.CreateOpen();
             using var tx = con.BeginTransaction();

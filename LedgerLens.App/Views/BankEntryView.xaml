@@ -129,6 +129,7 @@
                 </StackPanel>
                 <!-- Subledger -->
                 <StackPanel Grid.Column="5">
+                    
 
                     <!-- Blank label keeps button aligned with other inputs -->
                     <TextBlock Text=" "

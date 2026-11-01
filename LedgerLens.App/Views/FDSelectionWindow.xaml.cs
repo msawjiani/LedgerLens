@@ -1,5 +1,8 @@
-﻿using System;
+﻿using LedgerLens.Data.Models;
+using LedgerLens.Data.Repositories;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,8 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.ComponentModel;
-using LedgerLens.Data.Repositories;
+
 
 namespace LedgerLens.App.Views
 {
@@ -22,6 +24,7 @@ namespace LedgerLens.App.Views
     public partial class FDSelectionWindow : Window
     {
         private readonly int _accountId;
+        public FDBalance? SelectedFD { get; private set; }
 
         public FDSelectionWindow(
             int accountId,
@@ -41,9 +44,20 @@ namespace LedgerLens.App.Views
         {
             Close();
         }
+        private void FDGrid_MouseDoubleClick(
+                    object sender,
+                    System.Windows.Input.MouseButtonEventArgs e)
+                        {
+                            if (FDGrid.SelectedItem is not FDBalance fd)
+                                return;
 
+                            SelectedFD = fd;
+                            DialogResult = true;
+                        }
         private void Window_Closing(object? sender, CancelEventArgs e)
         {
+            if (DialogResult == true)
+                return;
             var result = MessageBox.Show(
                 "You have not selected a Fixed Deposit.\n\n" +
                 "Do you want to close this window?",

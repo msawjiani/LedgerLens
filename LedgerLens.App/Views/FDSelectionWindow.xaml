@@ -49,6 +49,7 @@
           Foreground="Black"
           BorderBrush="#333333"
           BorderThickness="1"
+          MouseDoubleClick="FDGrid_MouseDoubleClick"
           RowHeight="32"
           ColumnHeaderHeight="36">
 
