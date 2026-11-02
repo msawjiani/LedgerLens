@@ -119,7 +119,8 @@
                           Height="32"
                           ItemsSource="{Binding GLAccountsView}"
                           SelectedItem="{Binding SelectedGLAccount, Mode=TwoWay}"
-                          Loaded="GLAccountCombo_Loaded"    
+                          Loaded="GLAccountCombo_Loaded"   
+                          SelectionChanged="GLAccountCombo_SelectionChanged"
                           DisplayMemberPath="Account"
                           IsEditable="True"
                           IsTextSearchEnabled="False"
@@ -135,7 +136,9 @@
                     <TextBlock Text=" "
                Margin="0,0,0,5"/>
 
-                    <Button Content="SL"
+                    <Button 
+                         x:Name="SLButton"
+                        Content="SL"
                         Width="42"
                         Height="32"
                         Click="Subledger_Click"

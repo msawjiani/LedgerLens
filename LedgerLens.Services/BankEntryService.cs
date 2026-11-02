@@ -103,7 +103,7 @@ namespace LedgerLens.Services
             int yearId, DateTime tdate,
             decimal principalAmount, decimal interestAmount,
             string reference, string narration)
-        {
+            {
             if (principalAmount < 0 || interestAmount < 0)
                 throw new ArgumentOutOfRangeException(nameof(principalAmount), "Amounts must be non-negative.");
 

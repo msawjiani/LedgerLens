@@ -57,8 +57,8 @@ namespace LedgerLens.App.Views
             }
         }
         private void GLAccountCombo_Loaded(
-    object sender,
-    RoutedEventArgs e)
+                                    object sender,
+                                    RoutedEventArgs e)
         {
             if (GLAccountCombo.Template.FindName(
                 "PART_EditableTextBox",
@@ -70,8 +70,8 @@ namespace LedgerLens.App.Views
         }
 
         private void GLAccountSearch_TextChanged(
-      object sender,
-      TextChangedEventArgs e)
+                          object sender,
+                          TextChangedEventArgs e)
         {
             if (DataContext is not BankEntryViewModel vm)
                 return;
@@ -118,14 +118,38 @@ namespace LedgerLens.App.Views
 
                 return;
             }
+            decimal receiptAmount = 0m;
+
+            if (vm.IsReceipt &&
+                !decimal.TryParse(vm.Amount, out receiptAmount))
+            {
+                MessageBox.Show(
+                    "Please enter a valid receipt amount before selecting the FD.",
+                    "FD Receipt",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            if (vm.IsReceipt && receiptAmount <= 0)
+            {
+                MessageBox.Show(
+                    "Receipt amount must be greater than zero.",
+                    "FD Receipt",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
 
             var window = new FDSelectionWindow(
                 vm.SelectedGLAccount.AccountId,
                 vm.SelectedGLAccount.Account,
-                SubledgerRepository)
-            {
-                Owner = Window.GetWindow(this)
-            };
+                SubledgerRepository,
+                vm.IsReceipt,
+                receiptAmount)
+                {
+                    Owner = Window.GetWindow(this)
+                };
 
             if (window.ShowDialog() == true && window.SelectedFD != null)
             {
@@ -133,7 +157,32 @@ namespace LedgerLens.App.Views
 
                 if (sender is Button button)
                     button.ToolTip = _selectedFD.Subaccount;
+
+                if (vm.IsPayment)
+                {
+                    // Existing FD Payment behaviour
+                    vm.Narration = $"Being {_selectedFD.Subaccount}";
+                }
+                else if (vm.IsReceipt)
+                {
+                    decimal principal = window.PrincipalAmount;
+                    decimal interest = window.InterestAmount;
+
+                    vm.Narration =
+                        $"Being {_selectedFD.Subaccount} - " +
+                        $"Principal Rs.{principal:N2} + " +
+                        $"Interest Rs.{interest:N2}";
+                }
             }
+        }
+        private void GLAccountCombo_SelectionChanged(
+                                                        object sender,
+                                                        SelectionChangedEventArgs e)
+        {
+            _selectedFD = null;
+
+            if (SLButton != null)
+                SLButton.ToolTip = null;
         }
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
@@ -174,6 +223,7 @@ namespace LedgerLens.App.Views
             if (result.Success)
             {
                 _selectedFD = null;
+                SLButton.ToolTip = null;
             }
         }
 
