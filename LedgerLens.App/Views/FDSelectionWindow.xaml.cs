@@ -26,9 +26,12 @@ namespace LedgerLens.App.Views
         private readonly int _accountId;
         private readonly decimal _receiptAmount;
         public FDBalance? SelectedFD { get; private set; }
+
+
         public decimal PrincipalAmount { get; private set; }
         public decimal InterestAmount { get; private set; }
 
+        public bool IsFullyClosed { get; private set; }
         public FDSelectionWindow(
             int accountId,
             string glAccountName,
@@ -103,10 +106,29 @@ namespace LedgerLens.App.Views
                         MessageBoxImage.Warning);
                     return;
                 }
+                // Full Closure validation
+                if (FullyClosedCheckBox.IsChecked == true &&
+                    principal != fd.TotalFD)
+                {
+                    MessageBox.Show(
+                        $"Cannot fully close this FD.\n\n" +
+                        $"FD Outstanding: Rs.{fd.TotalFD:N2}\n" +
+                        $"Principal Withdrawn: Rs.{principal:N2}\n\n" +
+                        "For full closure, the entire outstanding principal must be withdrawn.",
+                        "FD Full Closure",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
 
                 InterestAmount = interest;
                 PrincipalAmount = principal;
             }
+
+            IsFullyClosed =
+                ReceiptPanel.Visibility == Visibility.Visible &&
+                FullyClosedCheckBox.IsChecked == true;
 
             SelectedFD = fd;
             DialogResult = true;

@@ -474,6 +474,136 @@ namespace LedgerLens.App.ViewModels
                 return (false, $"Unable to save Receipt: {ex.Message}");
             }
         }
+        public async Task<(bool Success, string Message)> SaveFDReceiptAsync(
+                            int fdSubledgerId,
+                            decimal principalAmount,
+                            decimal interestAmount,
+                            bool fullyClosed)
+        {
+            // 1. Date validation
+            if (!ValidateEntryDate(out string dateError))
+                return (false, dateError);
+
+            // 2. Reference validation
+            if (!ValidateReference(out string referenceError))
+                return (false, referenceError);
+
+            // 3. Bank selection
+            if (SelectedBank == null)
+                return (false, "Please select a Bank Account.");
+
+            // 4. FD Ledger Account selection
+            if (SelectedGLAccount == null ||
+                SelectedGLAccount.SubledgerFlag != "SL")
+            {
+                return (false, "Please select a valid FD Ledger Account.");
+            }
+
+            // 5. Prevent posting to the same account
+            if (SelectedBank.AccountId == SelectedGLAccount.AccountId)
+                return (false, "Bank and FD Account cannot be the same.");
+
+            // 6. Receipt mode
+            if (!IsReceipt || IsPayment)
+                return (false, "Please select Receipt.");
+
+            // 7. FD selection
+            if (fdSubledgerId <= 0)
+                return (false, "Please select a Fixed Deposit.");
+
+            // 8. Validate Bank Receipt Amount
+            if (!decimal.TryParse(
+                Amount,
+                NumberStyles.Number,
+                CultureInfo.CurrentCulture,
+                out decimal receiptAmount) || receiptAmount <= 0)
+            {
+                return (false, "Please enter a valid Receipt Amount.");
+            }
+
+            // 9. Validate Principal and Interest
+            if (principalAmount < 0 || interestAmount < 0)
+                return (false, "Principal and Interest cannot be negative.");
+
+            if (principalAmount + interestAmount != receiptAmount)
+            {
+                return (false,
+                    "Principal plus Interest must equal the Bank Receipt Amount.");
+            }
+
+            // 10. Validate Interest Account
+            if (interestAmount > 0 &&
+                SessionContext.InterestAccountCode <= 0)
+            {
+                return (false, "Interest Income Account is not configured.");
+            }
+
+            // 11. Full Closure posting is not connected yet
+ 
+
+            // 12. Interest-only receipts require a posting adjustment
+            if (principalAmount == 0)
+            {
+                return (false,
+                    "Interest-only FD Receipt posting is not yet implemented.");
+            }
+
+            // 13. Narration validation
+            if (string.IsNullOrWhiteSpace(Narration) ||
+                Narration.Trim().Equals(
+                    "Being", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "Please enter a Narration.");
+            }
+
+            // 14. Convert Date
+            string[] formats = { "d-MMM-yyyy", "dd-MMM-yyyy" };
+
+            DateTime transactionDate = DateTime.ParseExact(
+                EntryDate.Trim(),
+                formats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None);
+
+            // 15. Post FD Receipt
+            try
+            {
+                await _bankEntryService.MakeReceiptWithSubledgerAsync(
+                    SelectedBank.AccountId,
+                    SelectedBank.Account,
+
+                    SelectedGLAccount.AccountId,
+                    SelectedGLAccount.Account,
+
+                    SessionContext.InterestAccountCode,
+                    SessionContext.InterestAccountDesc,
+
+                    fdSubledgerId,
+
+                    SessionContext.SelectedYearId,
+                    transactionDate,
+
+                    principalAmount,
+                    interestAmount,
+
+                    Reference.Trim(),
+                    Narration.Trim(),
+                    fullyClosed);
+
+                // 16. Refresh Bank Grid and Balance
+                LoadSelectedBank();
+
+                // 17. Clear entry fields
+                Amount = string.Empty;
+                Narration = "Being ";
+
+                return (true, "FD Receipt saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Unable to save FD Receipt: {ex.Message}");
+            }
+        }
         public async Task<(bool Success, string Message)> SavePaymentAsync(
                             int? subledgerId = null)
         {

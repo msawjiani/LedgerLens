@@ -102,7 +102,8 @@ namespace LedgerLens.Services
             int fdSubledgerId,
             int yearId, DateTime tdate,
             decimal principalAmount, decimal interestAmount,
-            string reference, string narration)
+            string reference, string narration,
+            bool fullyClosed = false)
             {
             if (principalAmount < 0 || interestAmount < 0)
                 throw new ArgumentOutOfRangeException(nameof(principalAmount), "Amounts must be non-negative.");
@@ -156,7 +157,7 @@ namespace LedgerLens.Services
                 };
             }
 
-            return PostReceiptWithSubledgerAsync(bankDr, fdCr, interestCr, fdSubledgerId);
+            return PostReceiptWithSubledgerAsync(bankDr, fdCr, interestCr, fdSubledgerId, fullyClosed);
         }
 
         // =============== Internals ===============
@@ -233,12 +234,85 @@ namespace LedgerLens.Services
             GeneralLedger bankDr,
             GeneralLedger fdCr,
             GeneralLedger? interestCr,
-            int fdSubledgerId)
+            int fdSubledgerId,
+            bool fullyClosed)
         {
             using var con = _factory.CreateOpen();
             using var tx = con.BeginTransaction();
             try
             {
+                // Verify that the FD is active and belongs to the selected GL Account
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        """
+                            SELECT COUNT(*)
+                            FROM SubledgerChart
+                            WHERE SubledgerId = ?
+                              AND AccountId = ?
+                              AND Active = 'Y'
+                            """;
+
+                    cmd.Parameters.AddWithValue("@p1", fdSubledgerId);
+                    cmd.Parameters.AddWithValue("@p2", fdCr.AccountId);
+
+                    int fdCount = Convert.ToInt32(cmd.ExecuteScalar());
+
+                    if (fdCount != 1)
+                    {
+                        throw new InvalidOperationException(
+                            "The selected Fixed Deposit is inactive " +
+                            "or does not belong to the selected GL Account.");
+                    }
+                }
+
+                // Validate current FD balance within the posting transaction
+                decimal outstandingBalance;
+
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        """
+                        SELECT SUM(g.Amount)
+                        FROM GeneralLedger AS g
+                        INNER JOIN SubledgerTrans AS st
+                            ON g.TransactionId = st.TransactionId
+                        WHERE st.SubledgerId = ?
+                        """;
+
+                    cmd.Parameters.AddWithValue("@p1", fdSubledgerId);
+
+                    object? result = cmd.ExecuteScalar();
+
+                    outstandingBalance =
+                        result == null || result == DBNull.Value
+                            ? 0m
+                            : Convert.ToDecimal(result);
+                }
+
+                // FD credit is negative in GeneralLedger
+                decimal principalWithdrawn = -fdCr.Amount;
+
+                if (principalWithdrawn > outstandingBalance)
+                {
+                    throw new InvalidOperationException(
+                        $"Principal withdrawal exceeds the FD balance.\n\n" +
+                        $"Outstanding: Rs.{outstandingBalance:N2}\n" +
+                        $"Principal: Rs.{principalWithdrawn:N2}");
+                }
+
+                // Full closure requires the entire principal balance
+                if (fullyClosed && principalWithdrawn != outstandingBalance)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot fully close this FD.\n\n" +
+                        $"Outstanding: Rs.{outstandingBalance:N2}\n" +
+                        $"Principal: Rs.{principalWithdrawn:N2}");
+                }
                 var unix = _repo.GetNextUnix(tx);
                 bankDr.Unix = (int)unix;
                 fdCr.Unix = (int)unix;
@@ -255,7 +329,38 @@ namespace LedgerLens.Services
                 _repo.InsertSubledgerTrans(
                     new SubledgerTrans { SubledgerId = fdSubledgerId, Unix = unix, TransactionId = fdCrId }, tx);
 
+                // Mark the FD inactive only when Fully Closed is requested
+                if (fullyClosed)
+                {
+                    using var cmd = con.CreateCommand();
+
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        """
+                            UPDATE SubledgerChart
+                            SET Active = 'N'
+                            WHERE SubledgerId = ?
+                              AND AccountId = ?
+                              AND Active = 'Y'
+                            """;
+
+                    cmd.Parameters.AddWithValue("@p1", fdSubledgerId);
+                    cmd.Parameters.AddWithValue("@p2", fdCr.AccountId);
+
+                    int rowsUpdated = cmd.ExecuteNonQuery();
+
+                    if (rowsUpdated != 1)
+                    {
+                        throw new InvalidOperationException(
+                            "Unable to close the FD. " +
+                            "Please verify that the FD is active " +
+                            "and belongs to the selected GL Account.");
+                    }
+                }
+
                 tx.Commit();
+
                 return Task.FromResult((bankDrId, fdCrId, interestCrId));
             }
             catch (OleDbException ex)

@@ -32,6 +32,6 @@ namespace LedgerLens.Services.Abstractions
             int fdSubledgerId,
             int yearId, DateTime tdate,
             decimal principalAmount, decimal interestAmount,
-            string reference, string narration);
+            string reference, string narration, bool fullyClosed = false);
     }
 }

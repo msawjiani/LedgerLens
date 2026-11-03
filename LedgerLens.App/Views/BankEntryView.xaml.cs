@@ -33,6 +33,10 @@ namespace LedgerLens.App.Views
     {
         public SubledgerRepository? SubledgerRepository { get; set; }
         private FDBalance? _selectedFD;
+        private decimal _fdReceiptPrincipal = 0m;
+        private decimal _fdReceiptInterest = 0m;
+        private bool _fdReceiptFullyClosed = false;
+
         public BankEntryView()
         {
             InitializeComponent();
@@ -165,13 +169,14 @@ namespace LedgerLens.App.Views
                 }
                 else if (vm.IsReceipt)
                 {
-                    decimal principal = window.PrincipalAmount;
-                    decimal interest = window.InterestAmount;
+                    _fdReceiptPrincipal = window.PrincipalAmount;
+                    _fdReceiptInterest = window.InterestAmount;
+                    _fdReceiptFullyClosed = window.IsFullyClosed;
 
                     vm.Narration =
                         $"Being {_selectedFD.Subaccount} - " +
-                        $"Principal Rs.{principal:N2} + " +
-                        $"Interest Rs.{interest:N2}";
+                        $"Principal Rs.{_fdReceiptPrincipal:N2} + " +
+                        $"Interest Rs.{_fdReceiptInterest:N2}";
                 }
             }
         }
@@ -208,10 +213,33 @@ namespace LedgerLens.App.Views
 
                 return;
             }
+            // Determine the appropriate posting method
 
-            var result = vm.IsReceipt
-                ? await vm.SaveReceiptAsync()
-                : await vm.SavePaymentAsync(_selectedFD?.SubledgerId); 
+            (bool Success, string Message) result;
+
+            if (vm.IsReceipt)
+            {
+                if (vm.SelectedGLAccount?.SubledgerFlag == "SL")
+                {
+                    // FD Receipt
+                    result = await vm.SaveFDReceiptAsync(
+                        _selectedFD!.SubledgerId,
+                        _fdReceiptPrincipal,
+                        _fdReceiptInterest,
+                        _fdReceiptFullyClosed);
+                }
+                else
+                {
+                    // Ordinary Bank Receipt
+                    result = await vm.SaveReceiptAsync();
+                }
+            }
+            else
+            {
+                // Existing Bank Payment behaviour
+                result = await vm.SavePaymentAsync(
+                    _selectedFD?.SubledgerId);
+            }
 
             MessageBox.Show(
                 result.Message,
@@ -223,6 +251,11 @@ namespace LedgerLens.App.Views
             if (result.Success)
             {
                 _selectedFD = null;
+
+                _fdReceiptPrincipal = 0m;
+                _fdReceiptInterest = 0m;
+                _fdReceiptFullyClosed = false;
+
                 SLButton.ToolTip = null;
             }
         }

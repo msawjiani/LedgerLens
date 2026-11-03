@@ -68,20 +68,25 @@
 
         </DataGrid>
         <!-- FD Receipt Details -->
+        <!-- FD Receipt Details -->
         <StackPanel x:Name="ReceiptPanel"
             Grid.Row="2"
-            Orientation="Horizontal"
+            Orientation="Vertical"
             Margin="0,15,0,0"
-            VerticalAlignment="Center"
             Visibility="Collapsed">
 
-            <TextBlock Text="Total Receipt"
-               Foreground="White"
-               FontSize="14"
-               VerticalAlignment="Center"
-               Margin="0,0,8,0"/>
+            <!-- Receipt Amounts -->
+            <StackPanel Orientation="Horizontal"
+                VerticalAlignment="Center">
 
-            <TextBox x:Name="TotalReceiptTextBox"
+                <!-- Total Receipt -->
+                <TextBlock Text="Total Receipt"
+                   Foreground="White"
+                   FontSize="14"
+                   VerticalAlignment="Center"
+                   Margin="0,0,8,0"/>
+
+                <TextBox x:Name="TotalReceiptTextBox"
                  Width="100"
                  Height="32"
                  FontSize="14"
@@ -90,36 +95,48 @@
                  TextAlignment="Right"
                  Margin="0,0,15,0"/>
 
-            <TextBlock Text="Interest Received"
-               Foreground="White"
-               FontSize="14"
-               VerticalAlignment="Center"
-               Margin="0,0,12,0"/>
+                <!-- Interest Received -->
+                <TextBlock Text="Interest Received"
+                   Foreground="White"
+                   FontSize="14"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,0"/>
 
-            <TextBox x:Name="InterestTextBox"
+                <TextBox x:Name="InterestTextBox"
                  Width="110"
                  Height="32"
                  FontSize="14"
                  VerticalContentAlignment="Center"
+                 TextAlignment="Right"
                  Text="0.00"
                  LostFocus="InterestTextBox_LostFocus"/>
 
-            <TextBlock Text="Principal"
+                <!-- Principal -->
+                <TextBlock Text="Principal"
                    Foreground="White"
                    FontSize="14"
                    VerticalAlignment="Center"
                    Margin="12,0,8,0"/>
 
-            <TextBox x:Name="PrincipalTextBox"
-                     Width="110"
-                     Height="32"
-                     FontSize="14"
-                     IsReadOnly="True"
-                     VerticalContentAlignment="Center"
-                     TextAlignment="Right"/>
+                <TextBox x:Name="PrincipalTextBox"
+                 Width="110"
+                 Height="32"
+                 FontSize="14"
+                 IsReadOnly="True"
+                 VerticalContentAlignment="Center"
+                 TextAlignment="Right"/>
+
+            </StackPanel>
+
+            <!-- Full Closure -->
+            <CheckBox x:Name="FullyClosedCheckBox"
+              Content="Fully Closed"
+              Foreground="White"
+              FontSize="14"
+              Margin="0,15,0,0"
+              IsChecked="False"/>
 
         </StackPanel>
-
         <!-- Buttons -->
         <StackPanel Grid.Row="3"
                     Orientation="Horizontal"
