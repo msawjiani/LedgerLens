@@ -16,6 +16,22 @@ namespace LedgerLens.Data.Abstractions
         // NEW:
         int InsertSharePurchase(SharePurchase sp, OleDbTransaction tx);
         string? GetShareCompanyName(int shareId, OleDbTransaction tx); // optional helper for narration
+
+        bool HasOtherFDTransactions(
+                int subledgerId,
+                int yearId,
+                int unix);
+
+        List<int> GetSubledgerIdsForUnix(int yearId, int unix);
+
+        bool IsClosedByDifferentUnix(
+                            int subledgerId,
+                            int unix);
+        int DeleteBankEntry(
+                    int transactionId,
+                    int bankAccountId,
+                    int yearId,
+                    int unix);
     }
 }
 

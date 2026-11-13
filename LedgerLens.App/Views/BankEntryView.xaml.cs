@@ -1,4 +1,5 @@
-﻿using LedgerLens.App.ViewModels;
+﻿using LedgerLens.App.Session;
+using LedgerLens.App.ViewModels;
 using LedgerLens.Data.Models;
 using LedgerLens.Data.Repositories;
 using System;
@@ -257,6 +258,71 @@ namespace LedgerLens.App.Views
                 _fdReceiptFullyClosed = false;
 
                 SLButton.ToolTip = null;
+            }
+        }
+        private void DeleteBankEntry_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button ||
+                button.DataContext is not BankEntryRow row ||
+                DataContext is not BankEntryViewModel vm)
+            {
+                return;
+            }
+
+            // STEP 1: Preliminary dependency check
+            try
+            {
+                var check = vm.CheckDeleteDependency(row);
+
+                if (!check.CanProceed)
+                {
+                    MessageBox.Show(
+                        check.Message,
+                        "LedgerLens - Delete Not Permitted",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                // STEP 2: Ask for confirmation
+                var answer = MessageBox.Show(
+                    $"Reference: {row.Ref}\n" +
+                    $"UNIX: {row.Unix}\n" +
+                    $"Amount: Rs. {row.Amount:N2}\n\n" +
+                    $"{check.Message}\n\n" +
+                    "This will delete the COMPLETE transaction " +
+                    "including all associated General Ledger entries.\n\n" +
+                    "Are you sure you want to DELETE?",
+                    "LedgerLens - Confirm Deletion",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning,
+                    MessageBoxResult.No);
+
+                if (answer != MessageBoxResult.Yes)
+                    return;
+
+                // STEP 3: Actual deletion
+                int deletedRows = vm.DeleteBankEntry(row);
+
+                // STEP 4: Display success
+                MessageBox.Show(
+                    $"Transaction deleted successfully.\n\n" +
+                    $"Reference: {row.Ref}\n" +
+                    $"UNIX: {row.Unix}\n" +
+                    $"General Ledger rows deleted: {deletedRows}",
+                    "LedgerLens - Deleted",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Deletion failed.\n\n{ex.Message}\n\n" +
+                    "The transaction has not been deleted.",
+                    "LedgerLens - Delete Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 

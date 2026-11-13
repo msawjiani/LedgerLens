@@ -689,6 +689,116 @@ namespace LedgerLens.App.ViewModels
             }
         }
 
+        public (bool CanProceed, string Message) CheckDeleteDependency(
+                                    BankEntryRow row)
+        {
+            // Deletion is restricted to the latest accounting year.
+            if (SessionContext.SelectedYearId != SessionContext.MaxYearId)
+            {
+                return (false,
+                    "Deletion is not permitted for previous accounting years.");
+            }
+
+            if (SelectedBank == null ||
+                row.AccountId != SelectedBank.AccountId)
+            {
+                return (false, "Invalid Bank Account selection.");
+            }
+
+            if (row.Unix <= 0)
+                return (false, "Invalid UNIX number.");
+
+            // Identify FDs associated with this accounting transaction.
+            var subledgerIds = _transactionRepository.GetSubledgerIdsForUnix(
+                SessionContext.SelectedYearId,
+                row.Unix);
+
+            // Ordinary Bank transaction without FD involvement.
+            if (subledgerIds.Count == 0)
+            {
+                return (true,
+                    "Ordinary Bank transaction. No FD dependency.");
+            }
+
+            // Bank Payment is negative in GeneralLedger.
+            if (row.Amount < 0)
+            {
+                foreach (int subledgerId in subledgerIds)
+                {
+                    bool hasDependencies =
+                        _transactionRepository.HasOtherFDTransactions(
+                            subledgerId,
+                            SessionContext.SelectedYearId,
+                            row.Unix);
+
+                    if (hasDependencies)
+                    {
+                        return (false,
+                            $"Cannot delete FD Payment.\n\n" +
+                            $"SubledgerId: {subledgerId}\n" +
+                            $"UNIX: {row.Unix}\n\n" +
+                            "Other FD transactions exist.\n" +
+                            "Please delete the dependent transactions first.");
+                    }
+                }
+
+                return (true,
+                    "FD Payment: No dependent transactions found.");
+            }
+
+            // Bank Receipt is positive.
+            if (row.Amount > 0)
+            {
+                foreach (int subledgerId in subledgerIds)
+                {
+                    bool closedByAnotherUnix =
+                        _transactionRepository.IsClosedByDifferentUnix(
+                            subledgerId,
+                            row.Unix);
+
+                    if (closedByAnotherUnix)
+                    {
+                        return (false,
+                            $"Cannot delete FD Receipt.\n\n" +
+                            $"SubledgerId: {subledgerId}\n" +
+                            $"UNIX: {row.Unix}\n\n" +
+                            "This FD has been closed by another transaction.\n" +
+                            "Please delete the closing transaction first.");
+                    }
+                }
+
+                return (true,
+                    "FD Receipt: Closure dependency check passed.");
+            }
+
+            return (false, "Cannot delete a zero-amount transaction.");
+        }
+
+        public int DeleteBankEntry(BankEntryRow row)
+        {
+            // Perform preliminary dependency checks.
+            var result = CheckDeleteDependency(row);
+
+            if (!result.CanProceed)
+            {
+                throw new InvalidOperationException(result.Message);
+            }
+
+            // Actual deletion is performed atomically
+            // inside TransactionRepository.
+            int deletedRows = _transactionRepository.DeleteBankEntry(
+                row.TransactionId,
+                row.AccountId,
+                SessionContext.SelectedYearId,
+                row.Unix
+            );
+
+            // Refresh Bank Entry grid and running balance.
+            LoadSelectedBank();
+
+            return deletedRows;
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void OnPropertyChanged(

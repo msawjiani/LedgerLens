@@ -233,14 +233,34 @@
                   CanUserAddRows="False">
 
             <DataGrid.Columns>
-
+               
                 <DataGridTextColumn Header="Date"
                                     Binding="{Binding TDate, StringFormat=dd-MMM-yyyy}"
                                     Width="120"/>
 
-                <DataGridTextColumn Header="Ref"
-                                    Binding="{Binding Ref}"
-                                    Width="110"/>
+                <DataGridTemplateColumn Header="Ref" Width="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Ref}"
+                       VerticalAlignment="Center"
+                       Padding="4,0">
+
+                                <TextBlock.ToolTip>
+                                    <StackPanel>
+                                        <TextBlock FontWeight="Bold"
+                                   Text="{Binding Unix, StringFormat='UNIX: {0}'}"/>
+
+                                        <TextBlock Margin="0,5,0,0"
+                                   Text="{Binding Narration, StringFormat='Narration: {0}'}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="300"/>
+                                    </StackPanel>
+                                </TextBlock.ToolTip>
+
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                 <DataGridTextColumn Header="Particulars"
                                     Binding="{Binding Particulars}"
@@ -253,6 +273,28 @@
                 <DataGridTextColumn Header="Balance"
                                     Binding="{Binding RunningBalance, StringFormat=N2}"
                                     Width="140"/>
+
+                <!-- Delete Transaction -->
+                <DataGridTemplateColumn Header="D"
+                         Width="45"
+                         CanUserSort="False">
+
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+
+                                            <Button Content="D"
+                     Width="30"
+                     Height="25"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Click="DeleteBankEntry_Click"
+                     ToolTip="Delete Bank Entry"/>
+
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+
+                                </DataGridTemplateColumn>
+
 
             </DataGrid.Columns>
 

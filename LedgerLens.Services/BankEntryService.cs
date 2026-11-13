@@ -339,14 +339,16 @@ namespace LedgerLens.Services
                     cmd.CommandText =
                         """
                             UPDATE SubledgerChart
-                            SET Active = 'N'
-                            WHERE SubledgerId = ?
-                              AND AccountId = ?
+                               SET Active = 'N',
+                                   [Unix] = ?
+                               WHERE SubledgerId = ?
+                                 AND AccountId = ?
+                                 AND Active = 'Y'
                               AND Active = 'Y'
                             """;
-
-                    cmd.Parameters.AddWithValue("@p1", fdSubledgerId);
-                    cmd.Parameters.AddWithValue("@p2", fdCr.AccountId);
+                    cmd.Parameters.AddWithValue("@p1", Convert.ToInt32(unix));
+                    cmd.Parameters.AddWithValue("@p2", fdSubledgerId);
+                    cmd.Parameters.AddWithValue("@p3", fdCr.AccountId);
 
                     int rowsUpdated = cmd.ExecuteNonQuery();
 
