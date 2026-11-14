@@ -210,4 +210,9 @@ public partial class MainWindow : Window
 
         ContentArea.Content = view;
     }
+
+    private void Journal_Click(object sender, RoutedEventArgs e)
+    {
+        ContentArea.Content = new JournalEntryView();
+    }
 }

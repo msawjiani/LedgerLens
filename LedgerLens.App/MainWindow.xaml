@@ -148,13 +148,13 @@
 
 
                     <Expander IsExpanded="False"
-          Foreground="#D1D5DB"
-          Margin="0,10,0,0">
+                              Foreground="#D1D5DB"
+                              Margin="0,10,0,0">
 
                         <Expander.Header>
                             <TextBlock Text="Accounts"
-                   FontSize="17"
-                   FontWeight="SemiBold"/>
+                               FontSize="17"
+                               FontWeight="SemiBold"/>
                         </Expander.Header>
 
                         <StackPanel Margin="0,10,0,0">
@@ -194,6 +194,7 @@
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Journal"
+                                    Click="Journal_Click"
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Share Purchase"
