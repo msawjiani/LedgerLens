@@ -213,6 +213,22 @@ public partial class MainWindow : Window
 
     private void Journal_Click(object sender, RoutedEventArgs e)
     {
-        ContentArea.Content = new JournalEntryView();
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var ledgerAccountRepository =
+            new LedgerAccountRepository(factory);
+
+        var view = new JournalEntryView
+        {
+            DataContext = new JournalEntryViewModel(
+                ledgerAccountRepository)
+        };
+
+        ContentArea.Content = view;
     }
 }

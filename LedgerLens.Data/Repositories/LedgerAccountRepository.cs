@@ -123,4 +123,32 @@ public sealed class LedgerAccountRepository
 
         command.ExecuteNonQuery();
     }
+    public Dictionary<int, decimal> GetCurrentBalances()
+    {
+        var balances = new Dictionary<int, decimal>();
+
+        using var connection = _connectionFactory.CreateOpen();
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            """
+                SELECT AccountId, Total
+                FROM qryTrialBalance
+            """;
+
+        using var reader = command.ExecuteReader();
+
+        while (reader != null && reader.Read())
+        {
+            int accountId = Convert.ToInt32(reader["AccountId"]);
+
+            decimal balance = reader["Total"] == DBNull.Value
+                ? 0m
+                : Convert.ToDecimal(reader["Total"]);
+
+            balances[accountId] = balance;
+        }
+
+        return balances;
+    }
 }

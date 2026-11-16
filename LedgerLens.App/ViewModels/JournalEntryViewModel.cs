@@ -4,27 +4,85 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
+using LedgerLens.Data.Repositories;
 
 public class JournalEntryViewModel : INotifyPropertyChanged
 {
-    public JournalEntryViewModel()
+    public JournalEntryViewModel(
+        LedgerAccountRepository ledgerAccountRepository)
     {
+        var accounts = ledgerAccountRepository.GetAll();
+        
+        Accounts = new ObservableCollection<JournalAccountOption>(
+            accounts
+                .Where(a =>
+                    !string.Equals(
+                        a.Category?.Trim(),
+                        "BANK",
+                        StringComparison.OrdinalIgnoreCase)
+                    &&
+                    IsOrdinaryAccount(a.SubledgerFlag))
+                .Select(a => new JournalAccountOption
+                {
+                    AccountId = a.AccountId,
+                    Account = a.Account
+                })
+        );
+        _currentBalances = ledgerAccountRepository.GetCurrentBalances();
         foreach (var line in JournalLines)
             line.PropertyChanged += JournalLine_PropertyChanged;
 
         JournalLines.CollectionChanged +=
             JournalLines_CollectionChanged;
     }
+
+    private static bool IsOrdinaryAccount(string? flag)
+    {
+        string value = (flag ?? "").Trim().ToUpperInvariant();
+
+        return value is "" or "N" or "NO" or "NONE" or "0";
+    }
     // Temporary accounts for testing the ComboBox
-    public ObservableCollection<JournalAccountOption> Accounts { get; }
-        = new()
+    public ObservableCollection<JournalAccountOption> Accounts
+    {
+        get;
+    }
+
+    private string _dateInput = string.Empty;
+    public string DateInput
+    {
+        get => _dateInput;
+        set
         {
-            new() { AccountId = 1, Account = "ICICI Bank" },
-            new() { AccountId = 2, Account = "Capital Account" },
-            new() { AccountId = 3, Account = "Interest Income" },
-            new() { AccountId = 4, Account = "Office Expenses" },
-            new() { AccountId = 5, Account = "Professional Fees" }
-        };
+            _dateInput = value;
+            PropertyChanged?.Invoke(this,
+                new PropertyChangedEventArgs(nameof(DateInput)));
+        }
+    }
+    private readonly Dictionary<int, decimal> _currentBalances;
+    private string _refInput = string.Empty;
+    public string RefInput
+    {
+        get => _refInput;
+        set
+        {
+            _refInput = value;
+            PropertyChanged?.Invoke(this,
+                new PropertyChangedEventArgs(nameof(RefInput)));
+        }
+    }
+
+    private string _narrationInput = string.Empty;
+    public string NarrationInput
+    {
+        get => _narrationInput;
+        set
+        {
+            _narrationInput = value;
+            PropertyChanged?.Invoke(this,
+                new PropertyChangedEventArgs(nameof(NarrationInput)));
+        }
+    }
     public decimal TotalDebit =>
     JournalLines.Sum(x => x.Debit ?? 0m);
 
@@ -62,8 +120,26 @@ public class JournalEntryViewModel : INotifyPropertyChanged
         object? sender,
         PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(JournalLine.AccountId))
+        if (sender is JournalLine line &&
+            e.PropertyName == nameof(JournalLine.AccountId))
         {
+            // Retrieve the current ledger balance
+            // when an account is selected.
+            if (line.AccountId.HasValue &&
+                _currentBalances.TryGetValue(
+                    line.AccountId.Value,
+                    out decimal balance))
+            {
+                line.CurrentBalance = balance;
+            }
+            else
+            {
+                // Account has no existing transactions,
+                // or no account is selected.
+                line.CurrentBalance = 0m;
+            }
+
+            // Preserve our automatic row creation.
             EnsureTrailingBlankRow();
         }
 

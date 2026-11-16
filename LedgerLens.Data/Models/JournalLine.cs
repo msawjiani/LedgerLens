@@ -39,10 +39,11 @@ namespace LedgerLens.Data.Models
                         OnPropertyChanged(nameof(Credit));
                     }
                 }
+                OnPropertyChanged(nameof(BalanceAfter));
             }
         }
 
-        public decimal? Credit
+       public decimal? Credit
         {
             get => _credit;
             set
@@ -62,8 +63,12 @@ namespace LedgerLens.Data.Models
                         OnPropertyChanged(nameof(Debit));
                     }
                 }
+
+                // Must be OUTSIDE the IF condition
+                OnPropertyChanged(nameof(BalanceAfter));
             }
         }
+        
 
         public event PropertyChangedEventHandler?
             PropertyChanged;
@@ -75,5 +80,24 @@ namespace LedgerLens.Data.Models
                 this,
                 new PropertyChangedEventArgs(propertyName));
         }
+        private decimal _currentBalance;
+
+        public decimal CurrentBalance
+        {
+            get => _currentBalance;
+            set
+            {
+                if (_currentBalance == value)
+                    return;
+
+                _currentBalance = value;
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(BalanceAfter));
+            }
+        }
+
+        public decimal BalanceAfter =>
+            CurrentBalance + (Debit ?? 0m) - (Credit ?? 0m);
     }
 }

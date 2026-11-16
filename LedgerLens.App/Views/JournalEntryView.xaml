@@ -13,27 +13,102 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        <!-- JOURNAL HEADER -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
 
-        <TextBlock Grid.Row="0"
-               Text="Journal Entry - Grid Prototype"
+            <TextBlock Text="Journal Entry"
                FontSize="24"
-               Foreground="AliceBlue"
                FontWeight="Bold"
+               Foreground="AliceBlue"
                Margin="0,0,0,15"/>
 
-        <DataGrid Grid.Row="1"
-              x:Name="JournalGrid"
-              PreviewKeyDown="JournalGrid_PreviewKeyDown"
-              ItemsSource="{Binding JournalLines}"
-              AutoGenerateColumns="False"
-              CanUserAddRows="False"
-              CanUserDeleteRows="False"
-              SelectionUnit="Cell"
-              RowHeight="36"
-              FontSize="16"
-              HeadersVisibility="Column">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
 
-            <DataGrid.Columns>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- DATE -->
+                <!-- DATE LABEL -->
+                <TextBlock Grid.Row="0"
+                   Grid.Column="0"
+                   Text="Date"
+                   Foreground="White"
+                   FontWeight="Bold"
+                   FontSize="14"/>
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="0"
+                   
+                   Foreground="AliceBlue"
+                   Text="{Binding DateInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                   FontWeight="Bold"/>
+
+                <TextBox Grid.Row="1"
+                 Grid.Column="0"
+                 Height="32"
+                 Margin="0,5,10,0"
+                 FontSize="16"/>
+
+                <!-- REFERENCE -->
+                <TextBlock Grid.Row="0"
+                   Grid.Column="1"
+                   Text="{Binding RefInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                   Foreground="AliceBlue"
+                   FontWeight="Bold"/>
+
+                <TextBox Grid.Row="1"
+                 Grid.Column="1"
+                 Height="32"
+                 Margin="0,5,10,0"
+                 FontSize="16"/>
+
+                <!-- NARRATION -->
+                <TextBlock Grid.Row="0"
+                   Grid.Column="2"
+                   Text="{Binding NarrationInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                   Foreground="AliceBlue"
+                   FontWeight="Bold"/>
+
+                <TextBox Grid.Row="1"
+                 Grid.Column="2"
+                 Height="32"
+                 Margin="0,5,10,0"
+                 FontSize="16"/>
+
+                <!-- SAVE BUTTON -->
+                <Button Grid.Row="1"
+                Grid.Column="3"
+                Content="SAVE"
+                Height="32"
+                Margin="10,5,0,0"
+                FontWeight="Bold"
+                IsEnabled="False"/>
+
+            </Grid>
+
+        </StackPanel>
+
+        <DataGrid Grid.Row="1"
+                    x:Name="JournalGrid"
+                    PreviewKeyDown="JournalGrid_PreviewKeyDown"
+                    ItemsSource="{Binding JournalLines}"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    CanUserDeleteRows="False"
+                    SelectionUnit="Cell"
+                    RowHeight="36"
+                    FontSize="16"
+                    HeadersVisibility="Column">
+
+                <DataGrid.Columns>
 
                 <!-- ACCOUNT COMBOBOX -->
                 <DataGridTemplateColumn Header="Ledger Account"
@@ -104,6 +179,20 @@
 
                 </DataGridTemplateColumn>
 
+                <!-- CURRENT LEDGER BALANCE -->
+                <DataGridTextColumn
+                    Header="Current Balance"
+                    Width="175"
+                    IsReadOnly="True"
+                    Binding="{Binding CurrentBalance, StringFormat={}{0:N2}}"/>
+
+                <!-- BALANCE AFTER JOURNAL -->
+                <DataGridTextColumn
+                    Header="After Journal"
+                    Width="175"
+                    IsReadOnly="True"
+                    Binding="{Binding BalanceAfter, StringFormat={}{0:N2}}"/>
+
             </DataGrid.Columns>
 
         </DataGrid>
@@ -119,9 +208,23 @@
             </Grid.Resources>
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <!-- Ledger Account -->
+                <ColumnDefinition Width="350"/>
+
+                <!-- Debit -->
+                <ColumnDefinition Width="160"/>
+
+                <!-- Credit -->
+                <ColumnDefinition Width="160"/>
+
+                <!-- D Button -->
+                <ColumnDefinition Width="50"/>
+
+                <!-- Current Balance -->
+                <ColumnDefinition Width="175"/>
+
+                <!-- After Journal -->
+                <ColumnDefinition Width="175"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="35"/>

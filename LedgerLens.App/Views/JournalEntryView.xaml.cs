@@ -25,7 +25,7 @@ namespace LedgerLens.App.Views
         public JournalEntryView()
         {
             InitializeComponent();
-            DataContext = new JournalEntryViewModel();
+            
         }
 
         private void JournalGrid_PreviewKeyDown(
