@@ -1,10 +1,12 @@
-﻿using LedgerLens.Data.Models;
+﻿using LedgerLens.App.Session;
+using LedgerLens.Data.Models;
+using LedgerLens.Data.Repositories;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
-using LedgerLens.Data.Repositories;
+using System.Globalization;
 
 public class JournalEntryViewModel : INotifyPropertyChanged
 {
@@ -57,6 +59,7 @@ public class JournalEntryViewModel : INotifyPropertyChanged
             _dateInput = value;
             PropertyChanged?.Invoke(this,
                 new PropertyChangedEventArgs(nameof(DateInput)));
+            RecalculateTotals();
         }
     }
     private readonly Dictionary<int, decimal> _currentBalances;
@@ -69,6 +72,7 @@ public class JournalEntryViewModel : INotifyPropertyChanged
             _refInput = value;
             PropertyChanged?.Invoke(this,
                 new PropertyChangedEventArgs(nameof(RefInput)));
+            RecalculateTotals();
         }
     }
 
@@ -81,6 +85,7 @@ public class JournalEntryViewModel : INotifyPropertyChanged
             _narrationInput = value;
             PropertyChanged?.Invoke(this,
                 new PropertyChangedEventArgs(nameof(NarrationInput)));
+            RecalculateTotals();
         }
     }
     public decimal TotalDebit =>
@@ -93,7 +98,147 @@ public class JournalEntryViewModel : INotifyPropertyChanged
         TotalDebit - TotalCredit;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public bool IsSaveEnabled
+    {
+        get
+        {
+            // Only the latest accounting year permits posting.
+            if (SessionContext.SelectedYearId != SessionContext.MaxYearId)
+                return false;
 
+            // Validate Date
+            if (!DateTime.TryParseExact(
+                    DateInput?.Trim(),
+                    new[] { "d-MMM-yyyy", "dd-MMM-yyyy" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime date))
+            {
+                return false;
+            }
+
+            if (date.Date < SessionContext.SelectedStartDate.Date ||
+                date.Date > SessionContext.SelectedEndDate.Date)
+                return false;
+
+            // Validate Reference and Narration
+            if (string.IsNullOrWhiteSpace(RefInput) ||
+                string.IsNullOrWhiteSpace(NarrationInput))
+                return false;
+
+            // No duplicate ledger accounts
+            if (HasDuplicateAccounts)
+                return false;
+
+            // Ignore completely blank rows
+            var entries = JournalLines
+                .Where(x =>
+                    x.AccountId.HasValue ||
+                    x.Debit.HasValue ||
+                    x.Credit.HasValue)
+                .ToList();
+
+            if (entries.Count < 2)
+                return false;
+
+            foreach (var line in entries)
+            {
+                if (!line.AccountId.HasValue)
+                    return false;
+
+                // Account must exist in the available list
+                if (!Accounts.Any(a =>
+                    a.AccountId == line.AccountId.Value))
+                    return false;
+
+                bool hasDebit = line.Debit is > 0m;
+                bool hasCredit = line.Credit is > 0m;
+
+                // Exactly one side must contain a positive amount
+                if (hasDebit == hasCredit)
+                    return false;
+
+                if (line.Debit is < 0m ||
+                    line.Credit is < 0m)
+                    return false;
+            }
+
+            // Journal must balance
+            return TotalDebit > 0m &&
+                   TotalCredit > 0m &&
+                   TotalDebit == TotalCredit;
+        }
+    }
+    public string GetSaveDiagnostic()
+    {
+        if (SessionContext.SelectedYearId != SessionContext.MaxYearId)
+            return $"Accounting Year mismatch.\n" +
+                   $"Selected: {SessionContext.SelectedYearId}\n" +
+                   $"Maximum: {SessionContext.MaxYearId}";
+
+        if (!DateTime.TryParseExact(
+                DateInput?.Trim(),
+                "dd-MMM-yyyy",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateTime date))
+            return $"Invalid DateInput: '{DateInput}'";
+
+        if (date.Date < SessionContext.SelectedStartDate.Date ||
+            date.Date > SessionContext.SelectedEndDate.Date)
+            return $"Date outside accounting year.\n" +
+                   $"Date: {date:dd-MMM-yyyy}\n" +
+                   $"From: {SessionContext.SelectedStartDate:dd-MMM-yyyy}\n" +
+                   $"To: {SessionContext.SelectedEndDate:dd-MMM-yyyy}";
+
+        if (string.IsNullOrWhiteSpace(RefInput))
+            return "Reference is EMPTY.";
+
+        if (string.IsNullOrWhiteSpace(NarrationInput))
+            return "Narration is EMPTY.";
+
+        if (HasDuplicateAccounts)
+            return "Duplicate Ledger Accounts detected.";
+
+        var entries = JournalLines
+            .Where(x =>
+                x.AccountId.HasValue ||
+                x.Debit.HasValue ||
+                x.Credit.HasValue)
+            .ToList();
+
+        if (entries.Count < 2)
+            return $"Insufficient Journal Entries: {entries.Count}";
+
+        foreach (var line in entries)
+        {
+            if (!line.AccountId.HasValue)
+                return "A Journal row has no AccountId.";
+
+            if (!Accounts.Any(a => a.AccountId == line.AccountId.Value))
+                return $"AccountId {line.AccountId} is not in the account list.";
+
+            bool hasDebit = line.Debit is > 0m;
+            bool hasCredit = line.Credit is > 0m;
+
+            if (hasDebit == hasCredit)
+                return $"Invalid Debit/Credit combination for AccountId {line.AccountId}.";
+
+            if (line.Debit is < 0m || line.Credit is < 0m)
+                return $"Negative amount for AccountId {line.AccountId}.";
+        }
+
+        if (TotalDebit <= 0m ||
+            TotalCredit <= 0m ||
+            TotalDebit != TotalCredit)
+        {
+            return $"Journal not balanced.\n" +
+                   $"Debit: {TotalDebit:N2}\n" +
+                   $"Credit: {TotalCredit:N2}";
+        }
+
+        return "ALL VALIDATIONS PASSED!";
+    }
     private void RecalculateTotals()
     {
         PropertyChanged?.Invoke(this,
@@ -114,6 +259,9 @@ public class JournalEntryViewModel : INotifyPropertyChanged
                 this,
                 new PropertyChangedEventArgs(
                     nameof(HasDuplicateAccounts)));
+        PropertyChanged?.Invoke(
+                this,
+                new PropertyChangedEventArgs(nameof(IsSaveEnabled)));
     }
 
     private void JournalLine_PropertyChanged(

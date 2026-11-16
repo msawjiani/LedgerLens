@@ -37,51 +37,68 @@
 
                 <!-- DATE -->
                 <!-- DATE LABEL -->
+                <!-- DATE LABEL -->
                 <TextBlock Grid.Row="0"
-                   Grid.Column="0"
-                   Text="Date"
-                   Foreground="White"
-                   FontWeight="Bold"
-                   FontSize="14"/>
+           Grid.Column="0"
+           Text="Date"
+           Foreground="White"
+           FontWeight="Bold"
+           FontSize="14"/>
 
-                <TextBlock Grid.Row="0"
-                   Grid.Column="0"
-                   
-                   Foreground="AliceBlue"
-                   Text="{Binding DateInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                   FontWeight="Bold"/>
-
+                <!-- DATE INPUT -->
                 <TextBox Grid.Row="1"
-                 Grid.Column="0"
-                 Height="32"
-                 Margin="0,5,10,0"
-                 FontSize="16"/>
-
-                <!-- REFERENCE -->
+                         Grid.Column="0"
+                         Height="32"
+                         Margin="0,5,10,0"
+                         FontSize="16"
+                         Text="{Binding DateInput,
+                        Mode=TwoWay,
+                        UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- REFERENCE LABEL -->
+                <!-- REFERENCE LABEL -->
                 <TextBlock Grid.Row="0"
-                   Grid.Column="1"
-                   Text="{Binding RefInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                   Foreground="AliceBlue"
-                   FontWeight="Bold"/>
+           Grid.Column="1"
+           Text="Reference"
+           Foreground="White"
+           FontWeight="Bold"
+           FontSize="14"/>
 
+                <!-- REFERENCE INPUT -->
                 <TextBox Grid.Row="1"
-                 Grid.Column="1"
-                 Height="32"
-                 Margin="0,5,10,0"
-                 FontSize="16"/>
+                     Grid.Column="1"
+                     Height="32"
+                     Margin="0,5,10,0"
+                     FontSize="16"
+                     Text="{Binding RefInput,
+                                    Mode=TwoWay,
+                        UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!-- NARRATION -->
+                <!-- NARRATION LABEL -->
                 <TextBlock Grid.Row="0"
-                   Grid.Column="2"
-                   Text="{Binding NarrationInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                   Foreground="AliceBlue"
-                   FontWeight="Bold"/>
+           Grid.Column="2"
+           Text="Narration"
+           Foreground="White"
+           FontWeight="Bold"
+           FontSize="14"/>
 
+                <!-- NARRATION LABEL -->
+                <TextBlock Grid.Row="0"
+           Grid.Column="2"
+           Text="Narration"
+           Foreground="White"
+           FontWeight="Bold"
+           FontSize="14"/>
+
+                <!-- NARRATION INPUT -->
                 <TextBox Grid.Row="1"
-                 Grid.Column="2"
-                 Height="32"
-                 Margin="0,5,10,0"
-                 FontSize="16"/>
+                     Grid.Column="2"
+                     Height="32"
+                     Margin="0,5,10,0"
+                     FontSize="16"
+                     Text="{Binding NarrationInput,
+                                    Mode=TwoWay,
+                        UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!-- SAVE BUTTON -->
                 <Button Grid.Row="1"
@@ -90,9 +107,24 @@
                 Height="32"
                 Margin="10,5,0,0"
                 FontWeight="Bold"
-                IsEnabled="False"/>
+                IsEnabled="{Binding IsSaveEnabled}"/>
 
             </Grid>
+
+            <StackPanel Orientation="Horizontal"
+            Margin="0,5,0,0">
+
+                <TextBlock Text="IsSaveEnabled: "
+               Foreground="Yellow"
+               FontWeight="Bold"
+               FontSize="14"/>
+
+                <Button Content="CHECK SAVE"
+                    Margin="20,0,0,0"
+                    Padding="10,3"
+                    Click="CheckSave_Click"/>
+
+            </StackPanel>
 
         </StackPanel>
 

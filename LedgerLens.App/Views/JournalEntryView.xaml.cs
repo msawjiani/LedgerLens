@@ -72,6 +72,19 @@ namespace LedgerLens.App.Views
 
             e.Handled = true;
         }
+        private void CheckSave_Click(
+                object sender,
+                RoutedEventArgs e)
+        {
+            if (DataContext is not JournalEntryViewModel vm)
+                return;
+            MessageBox.Show(
+                $"IsSaveEnabled: {vm.IsSaveEnabled}\n\n" +
+                vm.GetSaveDiagnostic(),
+                "LedgerLens - Journal Validation",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
         private void DeleteJournalLine_Click(
                 object sender,
                 RoutedEventArgs e)
