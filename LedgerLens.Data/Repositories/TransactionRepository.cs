@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.OleDb;
 using LedgerLens.Data.Abstractions;
 using LedgerLens.Data.Models;
@@ -191,13 +192,13 @@ namespace LedgerLens.Data.Repositories
 
             command.CommandText =
                 """
-        SELECT DISTINCT st.SubledgerId
-        FROM SubledgerTrans AS st
-        INNER JOIN GeneralLedger AS gl
-            ON st.TransactionId = gl.TransactionId
-        WHERE gl.YearId = ?
-          AND gl.[Unix] = ?
-        """;
+                SELECT DISTINCT st.SubledgerId
+                FROM SubledgerTrans AS st
+                INNER JOIN GeneralLedger AS gl
+                    ON st.TransactionId = gl.TransactionId
+                WHERE gl.YearId = ?
+                  AND gl.[Unix] = ?
+                """;
 
             var p1 = command.CreateParameter();
             p1.Value = yearId;
@@ -572,7 +573,209 @@ namespace LedgerLens.Data.Repositories
                 throw;
             }
         }
+        public long PostJournal(
+                int yearId,
+                DateTime date,
+                string reference,
+                string narration,
+                IReadOnlyList<(int AccountId, decimal Amount)> lines)
+        {
+            // Basic validation
+            if (yearId <= 0)
+                throw new InvalidOperationException(
+                    "Invalid accounting year.");
 
+         
+
+            if (date == default)
+                throw new InvalidOperationException(
+                    "Invalid Journal date.");
+
+            if (string.IsNullOrWhiteSpace(reference))
+                throw new InvalidOperationException(
+                    "Journal Reference is required.");
+
+            if (string.IsNullOrWhiteSpace(narration))
+                throw new InvalidOperationException(
+                    "Journal Narration is required.");
+
+            if (lines == null || lines.Count < 2)
+                throw new InvalidOperationException(
+                    "A Journal requires at least two entries.");
+
+            // Every line must have an account and nonzero amount
+            if (lines.Any(x => x.AccountId <= 0 || x.Amount == 0m))
+                throw new InvalidOperationException(
+                    "Invalid Journal account or amount.");
+
+            // Duplicate accounts are not permitted
+            if (lines.Select(x => x.AccountId).Distinct().Count()
+                != lines.Count)
+            {
+                throw new InvalidOperationException(
+                    "Duplicate Ledger Accounts are not permitted.");
+            }
+
+            // Debit positive, Credit negative
+            if (!lines.Any(x => x.Amount > 0m) ||
+                !lines.Any(x => x.Amount < 0m) ||
+                lines.Sum(x => x.Amount) != 0m)
+            {
+                throw new InvalidOperationException(
+                    "Journal Debit and Credit totals must balance.");
+            }
+
+            using var con = _connectionFactory.CreateOpen();
+            using var tx = con.BeginTransaction();
+
+            try
+            {
+                // 1. Posting is allowed only in the latest accounting year.
+
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        "SELECT MAX(YearID) FROM AccountYears";
+
+                    object? result = cmd.ExecuteScalar();
+
+                    if (result == null ||
+                        result == DBNull.Value ||
+                        Convert.ToInt32(result) != yearId)
+                    {
+                        throw new InvalidOperationException(
+                            "Journal posting is permitted only in the current accounting year.");
+                    }
+                }
+                // 2. Verify that the Journal date belongs
+                // to the selected accounting year.
+
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        """
+                    SELECT StartDate, EndDate
+                    FROM AccountYears
+                    WHERE YearID = ?
+                    """;
+
+                    cmd.Parameters.AddWithValue("@p1", yearId);
+
+                    using var reader = cmd.ExecuteReader();
+
+                    if (reader == null || !reader.Read())
+                    {
+                        throw new InvalidOperationException(
+                            "Accounting year could not be found.");
+                    }
+
+                    DateTime startDate =
+                        Convert.ToDateTime(reader["StartDate"]).Date;
+
+                    DateTime endDate =
+                        Convert.ToDateTime(reader["EndDate"]).Date;
+
+                    if (date.Date < startDate ||
+                        date.Date > endDate)
+                    {
+                        throw new InvalidOperationException(
+                            $"Journal date must be between " +
+                            $"{startDate:dd-MMM-yyyy} and " +
+                            $"{endDate:dd-MMM-yyyy}.");
+                    }
+                }
+
+                // Validate every selected ledger account
+                foreach (var line in lines)
+                {
+                    using var cmd = con.CreateCommand();
+
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        """
+                        SELECT Category, SubledgerFlag
+                        FROM Chart
+                        WHERE AccountId = ?
+                        """;
+
+                    cmd.Parameters.AddWithValue("@p1", line.AccountId);
+
+                    using var reader = cmd.ExecuteReader();
+
+                    if (reader == null || !reader.Read())
+                    {
+                        throw new InvalidOperationException(
+                            $"Ledger Account {line.AccountId} was not found.");
+                    }
+
+                    string category =
+                        Convert.ToString(reader["Category"])?.Trim()
+                        ?? string.Empty;
+
+                    string flag =
+                        Convert.ToString(reader["SubledgerFlag"])?.Trim()
+                        ?? string.Empty;
+
+                    // Journal supports ordinary ledger accounts only
+                    if (category.Equals(
+                            "BANK",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        !(flag.Equals("NO", StringComparison.OrdinalIgnoreCase)
+                          || flag.Equals("N", StringComparison.OrdinalIgnoreCase)
+                          || string.IsNullOrEmpty(flag)
+                          || flag.Equals("NONE", StringComparison.OrdinalIgnoreCase)
+                          || flag == "0"))
+                    {
+                        throw new InvalidOperationException(
+                            $"Account {line.AccountId} is not eligible for ordinary Journal posting.");
+                    }
+                }
+
+                // Generate ONE UNIX for the complete Journal
+                int unix = checked((int)GetNextUnix(tx));
+
+                foreach (var line in lines)
+                {
+                    var gl = new GeneralLedger
+                    {
+                        AccountId = line.AccountId,
+                        YearId = yearId,
+                        Unix = unix,
+                        Tdate = date.Date,
+                        Ref = reference.Trim(),
+                        Particulars = "Consolidated Journal Entry",
+                        Amount = line.Amount,
+                        TransactionType = "JE",
+                        Narration = narration.Trim()
+                    };
+
+                    InsertGeneralLedger(gl, tx);
+                }
+
+                // All Journal lines have been inserted successfully
+                tx.Commit();
+
+                return unix;
+            }
+            catch
+            {
+                try
+                {
+                    tx.Rollback();
+                }
+                catch
+                {
+                    // Preserve the original exception
+                }
+
+                throw;
+            }
+        }
 
 
 

@@ -32,6 +32,13 @@ namespace LedgerLens.Data.Abstractions
                     int bankAccountId,
                     int yearId,
                     int unix);
+
+        long PostJournal(
+                    int yearId,
+                    DateTime date,
+                    string reference,
+                    string narration,
+                    IReadOnlyList<(int AccountId, decimal Amount)> lines);
     }
 }
 

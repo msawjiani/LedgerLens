@@ -102,12 +102,13 @@
 
                 <!-- SAVE BUTTON -->
                 <Button Grid.Row="1"
-                Grid.Column="3"
-                Content="SAVE"
-                Height="32"
-                Margin="10,5,0,0"
-                FontWeight="Bold"
-                IsEnabled="{Binding IsSaveEnabled}"/>
+                    Grid.Column="3"
+                    Content="SAVE"
+                    Height="32"
+                    Margin="10,5,0,0"
+                    FontWeight="Bold"
+                    IsEnabled="{Binding IsSaveEnabled}"
+                    Click="SaveJournal_Click"/>
 
             </Grid>
 

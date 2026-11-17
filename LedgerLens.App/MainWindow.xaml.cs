@@ -225,8 +225,11 @@ public partial class MainWindow : Window
 
         var view = new JournalEntryView
         {
-            DataContext = new JournalEntryViewModel(
-                ledgerAccountRepository)
+            JournalTransactionRepository = new TransactionRepository(factory),
+
+            DataContext =
+             new JournalEntryViewModel(
+                 ledgerAccountRepository)
         };
 
         ContentArea.Content = view;

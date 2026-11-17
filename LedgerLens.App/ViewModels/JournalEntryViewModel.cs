@@ -1,18 +1,20 @@
 ﻿using LedgerLens.App.Session;
+using LedgerLens.Data.Abstractions;
 using LedgerLens.Data.Models;
 using LedgerLens.Data.Repositories;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
-using System.Globalization;
 
 public class JournalEntryViewModel : INotifyPropertyChanged
 {
     public JournalEntryViewModel(
         LedgerAccountRepository ledgerAccountRepository)
     {
+
         var accounts = ledgerAccountRepository.GetAll();
         
         Accounts = new ObservableCollection<JournalAccountOption>(
@@ -37,6 +39,7 @@ public class JournalEntryViewModel : INotifyPropertyChanged
         JournalLines.CollectionChanged +=
             JournalLines_CollectionChanged;
     }
+
 
     private static bool IsOrdinaryAccount(string? flag)
     {
@@ -75,6 +78,7 @@ public class JournalEntryViewModel : INotifyPropertyChanged
             RecalculateTotals();
         }
     }
+
 
     private string _narrationInput = string.Empty;
     public string NarrationInput

@@ -1,6 +1,10 @@
-﻿using LedgerLens.Data.Models;
+﻿using LedgerLens.App.Session;
+using LedgerLens.Data.Abstractions;
+using LedgerLens.Data.Models;
+using LedgerLens.Data.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +30,11 @@ namespace LedgerLens.App.Views
         {
             InitializeComponent();
             
+        }
+        public ITransactionRepository? JournalTransactionRepository
+        {
+            get;
+            set;
         }
 
         private void JournalGrid_PreviewKeyDown(
@@ -130,6 +139,141 @@ namespace LedgerLens.App.Views
             }
 
             return null;
+        }
+        private void SaveJournal_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            // Commit pending DataGrid edits.
+
+            if (!JournalGrid.CommitEdit(
+                    DataGridEditingUnit.Cell, true))
+                return;
+
+            if (!JournalGrid.CommitEdit(
+                    DataGridEditingUnit.Row, true))
+                return;
+
+
+            if (DataContext is not JournalEntryViewModel vm)
+                return;
+
+
+            // Final ViewModel validation.
+
+            if (!vm.IsSaveEnabled)
+            {
+                MessageBox.Show(
+                    vm.GetSaveDiagnostic(),
+                    "Journal Validation",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+
+            if (JournalTransactionRepository == null)
+            {
+                MessageBox.Show(
+                    "TransactionRepository is not configured.",
+                    "Journal Entry",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+
+            // Parse the Journal date.
+
+            if (!DateTime.TryParseExact(
+                    vm.DateInput.Trim(),
+                    new[] { "d-MMM-yyyy", "dd-MMM-yyyy" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime journalDate))
+            {
+                MessageBox.Show("Invalid Journal date.");
+                return;
+            }
+
+
+            // Convert Debit and Credit into signed amounts.
+
+            var lines = vm.JournalLines
+                .Where(x => x.AccountId.HasValue)
+                .Select(x => (
+                    AccountId: x.AccountId!.Value,
+                    Amount: (x.Debit ?? 0m) -
+                            (x.Credit ?? 0m)
+                ))
+                .ToList();
+
+
+            // Confirm the database before saving.
+
+            var confirmation = MessageBox.Show(
+                $"Database:\n{SessionContext.DatabaseFileName}\n\n" +
+                $"Date: {journalDate:dd-MMM-yyyy}\n" +
+                $"Reference: {vm.RefInput}\n\n" +
+                $"Entries: {lines.Count}\n" +
+                $"Debit: {vm.TotalDebit:N2}\n" +
+                $"Credit: {vm.TotalCredit:N2}\n\n" +
+                "POST THIS JOURNAL?",
+                "Confirm Journal Posting",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+
+            if (confirmation != MessageBoxResult.Yes)
+                return;
+
+
+            // Actual database posting.
+
+            try
+            {
+                long unix = JournalTransactionRepository.PostJournal(
+                    SessionContext.SelectedYearId,
+                    journalDate,
+                    vm.RefInput,
+                    vm.NarrationInput,
+                    lines);
+
+
+                MessageBox.Show(
+                    $"JOURNAL SAVED SUCCESSFULLY!\n\n" +
+                    $"UNIX: {unix}\n" +
+                    $"Reference: {vm.RefInput}\n" +
+                    $"Journal Lines: {lines.Count}\n\n" +
+                    $"Debit: {vm.TotalDebit:N2}\n" +
+                    $"Credit: {vm.TotalCredit:N2}",
+                    "LedgerLens - Journal Saved",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+
+                // Clear the saved entry to prevent duplicate posting.
+                vm.RefInput = string.Empty;
+                vm.NarrationInput = string.Empty;
+
+                vm.JournalLines.Clear();
+
+                for (int i = 0; i < 3; i++)
+                {
+                    vm.JournalLines.Add(new JournalLine());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Journal could not be posted.\n\n" +
+                    ex.Message,
+                    "Journal Posting Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
     }
 }
