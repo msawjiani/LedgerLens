@@ -198,6 +198,7 @@
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Share Purchase"
+                                    Click="SharePurchase_Click"
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Share Sale"

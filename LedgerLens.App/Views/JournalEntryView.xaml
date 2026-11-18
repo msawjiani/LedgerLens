@@ -112,21 +112,7 @@
 
             </Grid>
 
-            <StackPanel Orientation="Horizontal"
-            Margin="0,5,0,0">
-
-                <TextBlock Text="IsSaveEnabled: "
-               Foreground="Yellow"
-               FontWeight="Bold"
-               FontSize="14"/>
-
-                <Button Content="CHECK SAVE"
-                    Margin="20,0,0,0"
-                    Padding="10,3"
-                    Click="CheckSave_Click"/>
-
-            </StackPanel>
-
+           
         </StackPanel>
 
         <DataGrid Grid.Row="1"

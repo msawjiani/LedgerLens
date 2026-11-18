@@ -1,0 +1,241 @@
+﻿<UserControl x:Class="LedgerLens.App.Views.SharePurchaseView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+
+            <!-- TITLE -->
+            <TextBlock Text="SHARE PURCHASE"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="#243B53"
+                       Margin="0,0,0,20"/>
+
+            <!-- ACCOUNTS -->
+            <!-- ACCOUNTS -->
+            <GroupBox Header="Account Information"
+                  FontWeight="SemiBold"
+                  Padding="12"
+                  Margin="0,0,0,10">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- CREDIT ACCOUNT -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Credit Account (Broker)"/>
+                        <ComboBox x:Name="CreditAccountCombo"
+                      Height="30"
+                      Margin="0,5,0,5"/>
+                    </StackPanel>
+
+                    <!-- SHARES ACCOUNT -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Shares Account"/>
+                        <ComboBox x:Name="SharesAccountCombo"
+                      Height="30"
+                      Margin="0,5,0,5"/>
+                    </StackPanel>
+
+                </Grid>
+            </GroupBox>
+            <!-- TRANSACTION AND PURCHASE DETAILS -->
+            <Grid Margin="0,0,0,15">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="11*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="9*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT: TRANSACTION DETAILS -->
+                <GroupBox Grid.Column="0"
+              Header="Transaction Details"
+              FontWeight="SemiBold"
+              Padding="12">
+
+                    <Grid>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- GL DATE -->
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="0"
+                       Text="GL Date"/>
+
+                        <TextBox x:Name="GLDateTextBox"
+                     Grid.Row="1"
+                     Grid.Column="0"
+                     Height="30"
+                     Margin="0,5,0,10"/>
+
+                        <!-- REFERENCE -->
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="2"
+                       Text="Reference"/>
+
+                        <TextBox x:Name="ReferenceTextBox"
+                     Grid.Row="1"
+                     Grid.Column="2"
+                     Height="30"
+                     Margin="0,5,0,10"/>
+
+                        <!-- PURCHASE DATE -->
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="4"
+                       Text="Purchase Date"/>
+
+                        <TextBox x:Name="PurchaseDateTextBox"
+                     Grid.Row="1"
+                     Grid.Column="4"
+                     Height="30"
+                     Margin="0,5,0,10"/>
+
+                        <!-- NARRATION -->
+                        <TextBlock Grid.Row="2"
+                       Grid.Column="0"
+                       Grid.ColumnSpan="5"
+                       Text="Narration"/>
+
+                        <TextBox x:Name="NarrationTextBox"
+                     Grid.Row="3"
+                     Grid.Column="0"
+                     Grid.ColumnSpan="5"
+                     Height="30"
+                     Margin="0,5,0,0"/>
+
+                    </Grid>
+
+                </GroupBox>
+
+                <!-- RIGHT: PURCHASE DETAILS -->
+                <GroupBox Grid.Column="2"
+                      Header="Purchase Details"
+                      FontWeight="SemiBold"
+                      Padding="12">
+
+                    <Grid VerticalAlignment="Top">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- QUANTITY -->
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="0"
+                       Text="Quantity"/>
+
+                        <TextBox x:Name="QuantityTextBox"
+                                 Grid.Row="1"
+                                 Grid.Column="0"
+                                 Height="30"
+                                 TextChanged="PurchaseInputs_TextChanged"
+                                 Margin="0,5,0,0"/>
+
+                        <!-- PURCHASE RATE -->
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="2"
+                       Text="Purchase Rate"/>
+
+                        <TextBox x:Name="PurchaseRateTextBox"
+                             TextChanged="PurchaseInputs_TextChanged"
+                             Grid.Row="1"
+                             Grid.Column="2"
+                             Height="30"
+                             Margin="0,5,0,0"/>
+
+                        <!-- PURCHASE AMOUNT -->
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="4"
+                       Text="Purchase Amount"/>
+
+                        <TextBox x:Name="PurchaseAmountTextBox"
+                             Grid.Row="1"
+                             Grid.Column="4"
+                             Text="0.00"
+                             IsReadOnly="True"
+                             Height="30"
+                             Margin="0,5,0,0"/>
+
+                        <!-- SAVE BUTTON -->
+                        <Button x:Name="SaveButton"
+                            Grid.Row="2"
+                            Grid.Column="4"
+                            Content="SAVE"
+                            Height="34"
+                            Margin="0,15,0,0"
+                            HorizontalAlignment="Stretch"
+                            Background="#2878B5"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            IsEnabled="True"
+                            Click="SaveButton_Click"/>
+
+                    </Grid>
+
+                </GroupBox>
+
+            </Grid>
+
+            <!-- COMPANY SELECTION -->
+            <GroupBox Header="Select Company"
+                      FontWeight="SemiBold"
+                      Padding="12"
+                      Margin="0,0,0,15">
+
+                <DataGrid x:Name="CompaniesDataGrid"
+                          Height="220"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          CanUserAddRows="False">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="Share ID"
+                                            Binding="{Binding ShareId}"
+                                            Width="100"/>
+
+                        <DataGridTextColumn Header="Company"
+                                            Binding="{Binding CompanyName}"
+                                            Width="*"/>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+            </GroupBox>
+
+
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

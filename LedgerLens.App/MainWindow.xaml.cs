@@ -114,6 +114,64 @@ public partial class MainWindow : Window
 
         }
     }
+    private void SharePurchase_Click(object sender, RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var ledgerRepository = new LedgerAccountRepository(factory);
+
+        var accounts = ledgerRepository.GetAll();
+
+        var view = new SharePurchaseView();
+
+        view.ShareTradeService = new ShareTradeService(
+                factory,
+                new TransactionRepository(factory));
+
+        // CREDIT ACCOUNT
+        view.CreditAccountCombo.ItemsSource = accounts;
+        view.CreditAccountCombo.DisplayMemberPath = "Account";
+        view.CreditAccountCombo.SelectedValuePath = "AccountId";
+
+        // SHARES ACCOUNT
+        view.SharesAccountCombo.ItemsSource = accounts
+            .Where(a => a.Category == "BS")
+            .ToList();
+        view.SharesAccountCombo.DisplayMemberPath = "Account";
+        view.SharesAccountCombo.SelectedValuePath = "AccountId";
+        // COMPANY GRID
+        var companyRepository = new CompanyRepository(factory);
+
+        view.SharesAccountCombo.SelectionChanged += (sender, args) =>
+        {
+            // Clear the previous selection
+            view.CompaniesDataGrid.SelectedItem = null;
+            view.CompaniesDataGrid.ItemsSource = null;
+
+            if (view.SharesAccountCombo.SelectedValue is int accountId)
+            {
+                view.CompaniesDataGrid.ItemsSource =
+                    companyRepository.GetByAccountId(accountId);
+            }
+        };
+
+        view.SharesAccountCombo.DropDownOpened += (sender, args) =>
+        {
+            if (view.CompaniesDataGrid.ItemsSource == null &&
+                view.SharesAccountCombo.SelectedValue is int accountId)
+            {
+                view.CompaniesDataGrid.ItemsSource =
+                    companyRepository.GetByAccountId(accountId);
+            }
+        };
+
+        ContentArea.Content = view;
+    }
     private void BankEntry_Click(object sender, RoutedEventArgs e)
     {
         var options = Options.Create(new OleDbOptions
