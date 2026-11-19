@@ -12,15 +12,17 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+using LedgerLens.App.Session;
+using LedgerLens.Services.Abstractions;
 using ClosedXML.Excel;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using LedgerLens.App.Models;
-
+using LedgerLens.Data.Models;
 using LedgerLens.Data.Repositories;
+using System.IO;
 
 
 namespace LedgerLens.App.Views
@@ -34,6 +36,8 @@ namespace LedgerLens.App.Views
         {
             InitializeComponent();
         }
+        private bool _batchPostingAttempted = false;
+        public IShareTradeService? ShareTradeService { get; set; }
         public LedgerAccountRepository? LedgerAccountRepository { get; set; }
 
         public CompanyRepository? CompanyRepository { get; set; }
@@ -229,9 +233,84 @@ namespace LedgerLens.App.Views
                     }
                 }
 
+                // RESOLVE DATABASE IDs FOR VALID ROWS
+
+                var postingCompanyCache = new Dictionary<int, List<Company>>();
+
+                foreach (var row in importedRows)
+                {
+                    // Do not process rows already containing errors.
+                    if (!string.IsNullOrWhiteSpace(row.ErrorMessage))
+                        continue;
+
+                    var creditAccount = accounts.FirstOrDefault(a =>
+                        string.Equals(
+                            a.Account?.Trim(),
+                            row.GLAccountForCredit,
+                            StringComparison.OrdinalIgnoreCase));
+
+                    var sharesAccount = accounts.FirstOrDefault(a =>
+                        string.Equals(
+                            a.Account?.Trim(),
+                            row.GLSharesAccountForDebit,
+                            StringComparison.OrdinalIgnoreCase));
+
+                    if (creditAccount == null || sharesAccount == null)
+                    {
+                        row.ErrorMessage = "Unable to resolve GL Account IDs.";
+                        continue;
+                    }
+
+                    if (!postingCompanyCache.TryGetValue(
+                        sharesAccount.AccountId, out var companies))
+                    {
+                        companies = CompanyRepository.GetByAccountId(
+                            sharesAccount.AccountId);
+
+                        postingCompanyCache[sharesAccount.AccountId] = companies;
+                    }
+
+                    var company = companies.FirstOrDefault(c =>
+                        string.Equals(
+                            c.CompanyName.Trim(),
+                            row.Company.Trim(),
+                            StringComparison.OrdinalIgnoreCase));
+
+                    if (company == null)
+                    {
+                        row.ErrorMessage = "Unable to resolve Share ID.";
+                        continue;
+                    }
+
+                    row.CreditAccountId = creditAccount.AccountId;
+                    row.SharesAccountId = sharesAccount.AccountId;
+                    row.ShareId = company.ShareId;
+                }
+
                 _excelRows.Clear();
 
+                // VALIDATE TRADE DATE AGAINST SELECTED FINANCIAL YEAR
 
+                foreach (var row in importedRows)
+                {
+                    // Invalid or missing dates have already been
+                    // flagged during Excel reading.
+                    if (!row.TradeDate.HasValue)
+                        continue;
+
+                    DateTime tradeDate = row.TradeDate.Value.Date;
+
+                    if (tradeDate < SessionContext.SelectedStartDate.Date ||
+                        tradeDate > SessionContext.SelectedEndDate.Date)
+                    {
+                        string error = "Trade Date outside selected financial year.";
+
+                        row.ErrorMessage =
+                            string.IsNullOrWhiteSpace(row.ErrorMessage)
+                                ? error
+                                : row.ErrorMessage + "; " + error;
+                    }
+                }
 
                 foreach (var row in importedRows)
                     _excelRows.Add(row);
@@ -242,7 +321,7 @@ namespace LedgerLens.App.Views
                 UpdateImportSummary();
 
                 // DATABASE IMPORT IS NOT ENABLED YET
-                ImportButton.IsEnabled = false;
+               
             }
             catch (Exception ex)
             {
@@ -288,6 +367,168 @@ namespace LedgerLens.App.Views
 
             TotalAmountText.Text =
                 $"Total Amount: ₹{totalAmount:N2}";
+
+            // Enable IMPORT only when every row is valid
+            // and the latest financial year is selected.
+
+            ImportButton.IsEnabled =
+                total > 0 &&
+                errorsCount == 0 &&
+                SessionContext.SelectedYearId == SessionContext.MaxYearId;
+        }
+
+        private async void ImportButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (_batchPostingAttempted)
+                return;
+
+            if (ShareTradeService == null)
+            {
+                MessageBox.Show("Share Trade Service is not initialized.");
+                return;
+            }
+
+            // FIRST TEST: SCRAP DATABASE ONLY
+            string databaseName =
+                System.IO.Path.GetFileName(SessionContext.DatabaseFileName);
+
+
+
+            if (SessionContext.SelectedYearId != SessionContext.MaxYearId)
+            {
+                MessageBox.Show("Please select the latest financial year.");
+                return;
+            }
+
+            if (_excelRows.Count == 0 ||
+                _excelRows.Any(r =>
+                    !string.IsNullOrWhiteSpace(r.ErrorMessage) ||
+                    !r.CreditAccountId.HasValue ||
+                    !r.SharesAccountId.HasValue ||
+                    !r.ShareId.HasValue ||
+                    !r.TradeDate.HasValue))
+            {
+                MessageBox.Show("All rows must be valid before posting.");
+                return;
+            }
+
+            string reference = BatchReferenceTextBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                MessageBox.Show("Please enter a Reference.");
+                return;
+            }
+
+            string narrationPrefix = BatchNarrationTextBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(narrationPrefix))
+                narrationPrefix = "Being";
+            else if (!narrationPrefix.StartsWith(
+                "Being",
+                StringComparison.OrdinalIgnoreCase))
+                narrationPrefix = "Being " + narrationPrefix;
+
+            decimal totalAmount = _excelRows.Sum(r => r.Amt);
+
+            var confirmation = MessageBox.Show(
+                $"Database: {databaseName}\n\n" +
+                $"Transactions: {_excelRows.Count}\n" +
+                $"Total Amount: ₹{totalAmount:N2}\n" +
+                $"Reference: {reference}\n\n" +
+                "POST THESE SHARE PURCHASES?",
+                "TURBO SHARE PURCHASE - CONFIRM POSTING",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (confirmation != MessageBoxResult.Yes)
+                return;
+
+            _batchPostingAttempted = true;
+
+            ImportButton.IsEnabled = false;
+            SelectExcelButton.IsEnabled = false;
+            TurboGrid.IsEnabled = false;
+
+            int posted = 0;
+            string failure = "";
+            var postingDetails = new List<string>();
+
+            foreach (var row in _excelRows.ToList())
+            {
+                try
+                {
+                    string narration =
+                        $"{narrationPrefix} " +
+                        $"Company: {row.Company} " +
+                        $"via {row.GLAccountForCredit} " +
+                        $"- Qty: {row.Qty:0.######} " +
+                        $"Rate: {row.Rate:0.######}";
+
+                    var result =
+                        await ShareTradeService.MakeSharePurchaseAsync(
+                            shareId: row.ShareId!.Value,
+                            debitSharesAccountId: row.SharesAccountId!.Value,
+                            creditBrokerAccountId: row.CreditAccountId!.Value,
+                            yearId: SessionContext.SelectedYearId,
+                            purchaseDate: row.TradeDate!.Value,
+                            glDate: row.TradeDate.Value,
+                            qty: row.Qty,
+                            rate: row.Rate,
+                            reference: reference,
+                            narrationOverride: narration,
+                            sharesAccountName: row.GLSharesAccountForDebit,
+                            brokerAccountName: row.GLAccountForCredit,
+                            companyName: row.Company);
+
+                    posted++;
+
+                    postingDetails.Add(
+                        $"Excel Row {row.ExcelRowNumber}: " +
+                        $"UNIX {result.unix}, " +
+                        $"GL {result.debitId}/{result.creditId}, " +
+                        $"Purchase {result.purchaseId}");
+
+                    // Successfully posted rows are removed from preview.
+                    _excelRows.Remove(row);
+                }
+                catch (Exception ex)
+                {
+                    failure =
+                        $"FAILED at Excel Row {row.ExcelRowNumber}\n" +
+                        ex.Message;
+
+                    break;
+                }
+            }
+
+            UpdateImportSummary();
+
+            // Keep IMPORT disabled after an attempt.
+            ImportButton.IsEnabled = false;
+
+            string report =
+                $"Successfully Posted: {posted}\n" +
+                $"Remaining Rows: {_excelRows.Count}\n\n" +
+                string.Join("\n", postingDetails);
+
+            if (!string.IsNullOrWhiteSpace(failure))
+            {
+                report +=
+                    $"\n\n{failure}\n\n" +
+                    "STOP: Verify the posted transactions in Access " +
+                    "before attempting another import.";
+            }
+
+            MessageBox.Show(
+                report,
+                "TURBO SHARE PURCHASE - POSTING RESULTS",
+                MessageBoxButton.OK,
+                string.IsNullOrWhiteSpace(failure)
+                    ? MessageBoxImage.Information
+                    : MessageBoxImage.Warning);
         }
 
     }

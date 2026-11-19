@@ -304,7 +304,12 @@ public partial class MainWindow : Window
         var view = new TurboSharePurchaseView
         {
             LedgerAccountRepository = new LedgerAccountRepository(factory),
-            CompanyRepository = new CompanyRepository(factory)
+
+            CompanyRepository = new CompanyRepository(factory),
+
+            ShareTradeService = new ShareTradeService(
+                factory,
+                new TransactionRepository(factory))
         };
 
         ContentArea.Content = view;

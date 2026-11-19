@@ -21,5 +21,10 @@ namespace LedgerLens.App.Models
         public decimal Amt { get; set; }
 
         public string? ErrorMessage { get; set; }
+        public int? CreditAccountId { get; set; }
+
+        public int? SharesAccountId { get; set; }
+
+        public int? ShareId { get; set; }
     }
 }
