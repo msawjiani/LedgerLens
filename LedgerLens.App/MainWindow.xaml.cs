@@ -292,4 +292,21 @@ public partial class MainWindow : Window
 
         ContentArea.Content = view;
     }
+    private void ImportExcel_Click(object sender, RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var view = new TurboSharePurchaseView
+        {
+            LedgerAccountRepository = new LedgerAccountRepository(factory),
+            CompanyRepository = new CompanyRepository(factory)
+        };
+
+        ContentArea.Content = view;
+    }
 }

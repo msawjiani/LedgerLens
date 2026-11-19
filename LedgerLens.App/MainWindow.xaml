@@ -208,6 +208,7 @@
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Import Excel"
+                            Click="ImportExcel_Click"
                             Style="{StaticResource SidebarButtonStyle}"/>
 
 
