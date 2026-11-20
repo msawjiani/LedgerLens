@@ -315,6 +315,40 @@ public partial class MainWindow : Window
 
         ContentArea.Content = view;
     }
+    // STEP 3B - Temporary Share Sales FIFO Retrieval Test
+
+    // STEP 3D - Test FIFO Allocation
+
+    private void TestShareLots()
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+        var service = new ShareSaleService(factory);
+
+        // sell 50 shares
+        var allocations = service.AllocateFIFO(
+            2551,
+            new DateTime(2024, 11, 20),
+            50m);
+
+        string result = string.Join(
+            "\n",
+            allocations.Select(x =>
+                $"{x.Lot.PurchaseTransId} | " +
+                $"{x.Lot.PurchaseDate:dd-MMM-yyyy} | " +
+                $"Qty Sold: {x.QtySold} | " +
+                $"Rate: {x.Lot.PurchaseRate:N2}"));
+
+        MessageBox.Show(
+            result,
+            "LedgerLens - FIFO Allocation Test",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
     private void SubledgerJournal_Click(
         object sender,
         RoutedEventArgs e)
@@ -325,7 +359,7 @@ public partial class MainWindow : Window
         });
 
         var factory = new OleDbConnectionFactory(options);
-
+        TestShareLots();
         var view = new SubledgerJournalView
         {
             LedgerAccountRepository =
