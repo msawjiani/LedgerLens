@@ -125,10 +125,10 @@ namespace LedgerLens.Data.Repositories
 
                 command.CommandText =
                 """
-            UPDATE SubledgerChart
-            SET Subaccount = ?
-            WHERE SubledgerId = ?
-            """;
+                UPDATE SubledgerChart
+                SET Subaccount = ?
+                WHERE SubledgerId = ?
+                """;
 
                 var subaccountParameter = command.CreateParameter();
                 subaccountParameter.Value = subledger.Subaccount;

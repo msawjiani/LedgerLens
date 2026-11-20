@@ -205,6 +205,7 @@
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Subledger Journal"
+                            Click="SubledgerJournal_Click"
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Import Excel"

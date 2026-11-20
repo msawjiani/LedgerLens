@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using LedgerLens.Services;
 
+
 namespace LedgerLens.App;
 
 /// <summary>
@@ -311,6 +312,36 @@ public partial class MainWindow : Window
                 factory,
                 new TransactionRepository(factory))
         };
+
+        ContentArea.Content = view;
+    }
+    private void SubledgerJournal_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+
+        var view = new SubledgerJournalView
+        {
+            LedgerAccountRepository =
+                new LedgerAccountRepository(factory),
+
+            SubledgerRepository =
+                new SubledgerRepository(factory),
+
+            // STEP 6B - Connect Posting Service
+            SubledgerJournalService =
+                new SubledgerJournalService(
+                    factory,
+                    new TransactionRepository(factory))
+        };
+
+        view.LoadAccounts();
 
         ContentArea.Content = view;
     }

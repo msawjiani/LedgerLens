@@ -1,0 +1,223 @@
+﻿<UserControl x:Class="LedgerLens.App.Views.SubledgerJournalView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F4F6FA">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+
+        <TextBlock Grid.Row="0"
+                   Text="SUBLEDGER JOURNAL"
+                   FontSize="25"
+                   FontWeight="Bold"
+                   Foreground="#172B4D"/>
+
+        <TextBlock Grid.Row="1"
+                   Text="Journal entries linked to individual subledger accounts"
+                   FontSize="13"
+                   Foreground="#64748B"
+                   Margin="0,4,0,15"/>
+
+        <!-- ACCOUNT SELECTION -->
+
+        <Border Grid.Row="2"
+                Background="White"
+                CornerRadius="10"
+                Padding="15"
+                Margin="0,0,0,10">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+
+                    <TextBlock Text="CREDIT ACCOUNT (GL)"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,6"/>
+
+                    <ComboBox x:Name="CreditAccountCombo"
+                              Height="34"
+                              FontSize="14"/>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+
+                    <TextBlock Text="DEBIT ACCOUNT (GL)"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,6"/>
+
+                    <ComboBox x:Name="DebitAccountCombo"
+                          Height="34"
+                          FontSize="14"
+                          SelectionChanged="DebitAccountCombo_SelectionChanged"/>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+        <!-- JOURNAL DETAILS -->
+
+        <Border Grid.Row="3"
+                Background="White"
+                CornerRadius="10"
+                Padding="15"
+                Margin="0,0,0,10">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*"/>
+                    <ColumnDefinition Width="1.1*"/>
+                    <ColumnDefinition Width="2.5*"/>
+                    <ColumnDefinition Width="1.2*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="DATE"
+                           FontWeight="SemiBold"/>
+
+                <TextBlock Grid.Column="1"
+                           Text="REFERENCE"
+                           FontWeight="SemiBold"/>
+
+                <TextBlock Grid.Column="2"
+                           Text="NARRATION"
+                           FontWeight="SemiBold"/>
+
+                <TextBlock Grid.Column="3"
+                           Text="AMOUNT"
+                           FontWeight="SemiBold"/>
+
+                <TextBox x:Name="DateTextBox"
+                         Grid.Row="1"
+                         Grid.Column="0"
+                         Height="34"
+                         Margin="0,6,12,0"/>
+
+                <TextBox x:Name="ReferenceTextBox"
+                         Grid.Row="1"
+                         Grid.Column="1"
+                         Height="34"
+                         Margin="0,6,12,0"/>
+
+                <TextBox x:Name="NarrationTextBox"
+                         Grid.Row="1"
+                         Grid.Column="2"
+                         Height="34"
+                         Margin="0,6,12,0"/>
+
+                <TextBox x:Name="AmountTextBox"
+                         Grid.Row="1"
+                         Grid.Column="3"
+                         Height="34"
+                         Margin="0,6,0,0"
+                         HorizontalContentAlignment="Right"/>
+
+            </Grid>
+
+        </Border>
+
+        <!-- SUBLEDGER SECTION -->
+
+        <Border Grid.Row="4"
+                Background="White"
+                CornerRadius="10"
+                Padding="15"
+                Margin="0,0,0,10">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="SELECT SUBLEDGER"
+                           FontSize="15"
+                           FontWeight="Bold"
+                           Foreground="#172B4D"
+                           Margin="0,0,0,10"/>
+
+                <!-- ONLY THIS GRID SCROLLS -->
+
+                <DataGrid x:Name="SubledgerGrid"
+                          Grid.Row="1"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          RowHeight="30"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          AlternatingRowBackground="#F1F5F9"
+                          Background="White"
+                          SelectionChanged="SubledgerGrid_SelectionChanged"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="ID"
+                                            Binding="{Binding SubledgerId}"
+                                            Width="100"/>
+
+                        <DataGridTextColumn Header="SUBLEDGER DESCRIPTION"
+                                            Binding="{Binding Subaccount}"
+                                            Width="*"/>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+                <TextBlock x:Name="SelectedSubledgerText"
+                           Grid.Row="2"
+                           Text="No subledger selected"
+                           Margin="0,10,0,0"
+                           FontSize="13"
+                           Foreground="#64748B"/>
+
+            </Grid>
+
+        </Border>
+
+        <!-- SAVE BUTTON -->
+
+        <Button x:Name="SaveJournalButton"
+                Grid.Row="5"
+                Content="SAVE JOURNAL"
+                Width="160"
+                Height="38"
+                HorizontalAlignment="Right"
+                Background="#16A34A"
+                Foreground="White"
+                FontWeight="Bold"
+                IsEnabled="True"
+                Click="SaveJournalButton_Click"/>
+
+    </Grid>
+
+</UserControl>
