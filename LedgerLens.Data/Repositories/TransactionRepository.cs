@@ -86,6 +86,68 @@ namespace LedgerLens.Data.Repositories
             return Convert.ToInt32(cmd.ExecuteScalar());
         }
 
+        // STEP 5C.3B - Insert Share Sale Allocation
+
+        public int InsertShareSale(
+            SharesSales sale,
+            OleDbTransaction tx)
+        {
+            using var cmd = tx.Connection!.CreateCommand();
+
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                """
+                INSERT INTO ShareSales
+                    (ShareId, PurchaseTransId, QtySold,
+                     SellingPrice, TransactionId, Unix)
+                VALUES (?, ?, ?, ?, ?, ?)
+        """;
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Integer,
+                Value = sale.ShareId
+            });
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Integer,
+                Value = sale.PurchaseTransId
+            });
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Double,
+                Value = (double)sale.QtySold
+            });
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Double,
+                Value = (double)sale.SellingPrice
+            });
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Integer,
+                Value = sale.TransactionId
+            });
+
+            cmd.Parameters.Add(new OleDbParameter
+            {
+                OleDbType = OleDbType.Integer,
+                Value = sale.Unix
+            });
+
+            cmd.ExecuteNonQuery();
+
+            cmd.Parameters.Clear();
+            cmd.CommandText = "SELECT @@IDENTITY";
+
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+
         public string? GetShareCompanyName(int shareId, OleDbTransaction tx)
         {
             using var cmd = tx.Connection!.CreateCommand();

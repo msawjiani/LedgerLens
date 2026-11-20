@@ -15,6 +15,11 @@ namespace LedgerLens.Data.Abstractions
 
         // NEW:
         int InsertSharePurchase(SharePurchase sp, OleDbTransaction tx);
+        // STEP 5C.3C - Share Sales Posting
+
+        int InsertShareSale(
+            SharesSales sale,
+            OleDbTransaction tx);
         string? GetShareCompanyName(int shareId, OleDbTransaction tx); // optional helper for narration
 
         bool HasOtherFDTransactions(

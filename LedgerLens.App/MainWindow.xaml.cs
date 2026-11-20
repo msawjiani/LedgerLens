@@ -319,6 +319,10 @@ public partial class MainWindow : Window
 
     // STEP 3D - Test FIFO Allocation
 
+    // STEP 4B - Test Share Sales Capital Gains
+
+    // STEP 5C.2 - Test Share Sale Posting Preparation
+
     private void TestShareLots()
     {
         var options = Options.Create(new OleDbOptions
@@ -327,25 +331,36 @@ public partial class MainWindow : Window
         });
 
         var factory = new OleDbConnectionFactory(options);
-        var service = new ShareSaleService(factory);
 
-        // sell 50 shares
-        var allocations = service.AllocateFIFO(
+        var service = new ShareSalePostingService(
+                                                factory,
+                                                new TransactionRepository(factory));
+
+        var entries = service.PrepareSale(
             2551,
             new DateTime(2024, 11, 20),
-            50m);
+            35m,
+            180m);
 
         string result = string.Join(
             "\n",
-            allocations.Select(x =>
-                $"{x.Lot.PurchaseTransId} | " +
-                $"{x.Lot.PurchaseDate:dd-MMM-yyyy} | " +
-                $"Qty Sold: {x.QtySold} | " +
-                $"Rate: {x.Lot.PurchaseRate:N2}"));
+            entries.Select(x =>
+                $"Lot: {x.PurchaseTransId} | " +
+                $"GL: {x.SharesAtCostAccountId} | " +
+                $"Qty: {x.QtySold} | " +
+                $"Cost: {x.PurchaseCost:N2} | " +
+                $"Proceeds: {x.SaleProceeds:N2} | " +
+                $"Gain/Loss: {x.GainLoss:N2} | " +
+                $"{x.Classification}"));
+
+        result +=
+            $"\n\nTotal Cost: {entries.Sum(x => x.PurchaseCost):N2}" +
+            $"\nTotal Proceeds: {entries.Sum(x => x.SaleProceeds):N2}" +
+            $"\nNet Gain/Loss: {entries.Sum(x => x.GainLoss):N2}";
 
         MessageBox.Show(
             result,
-            "LedgerLens - FIFO Allocation Test",
+            "LedgerLens - Share Sale Posting Preparation",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
     }
