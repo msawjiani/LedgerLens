@@ -323,6 +323,8 @@ public partial class MainWindow : Window
 
     // STEP 5C.2 - Test Share Sale Posting Preparation
 
+    // STEP 5E - First Actual Share Sales Posting Test
+
     private void TestShareLots()
     {
         var options = Options.Create(new OleDbOptions
@@ -333,36 +335,79 @@ public partial class MainWindow : Window
         var factory = new OleDbConnectionFactory(options);
 
         var service = new ShareSalePostingService(
-                                                factory,
-                                                new TransactionRepository(factory));
+            factory,
+            new TransactionRepository(factory));
 
-        var entries = service.PrepareSale(
-            2551,
-            new DateTime(2024, 11, 20),
-            35m,
-            180m);
+        // Test transaction details
 
-        string result = string.Join(
-            "\n",
-            entries.Select(x =>
-                $"Lot: {x.PurchaseTransId} | " +
-                $"GL: {x.SharesAtCostAccountId} | " +
-                $"Qty: {x.QtySold} | " +
-                $"Cost: {x.PurchaseCost:N2} | " +
-                $"Proceeds: {x.SaleProceeds:N2} | " +
-                $"Gain/Loss: {x.GainLoss:N2} | " +
-                $"{x.Classification}"));
+        int shareId = 2551;
+        int brokerAccountId = 337;
 
-        result +=
-            $"\n\nTotal Cost: {entries.Sum(x => x.PurchaseCost):N2}" +
-            $"\nTotal Proceeds: {entries.Sum(x => x.SaleProceeds):N2}" +
-            $"\nNet Gain/Loss: {entries.Sum(x => x.GainLoss):N2}";
+        DateTime saleDate = new DateTime(2024, 11, 20);
 
-        MessageBox.Show(
-            result,
-            "LedgerLens - Share Sale Posting Preparation",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        decimal quantity = 35m;
+        decimal sellingPrice = 180m;
+
+        string reference = "SS001";
+        string narration = "Test Sale of Bharat Electronics";
+
+        decimal proceeds = quantity * sellingPrice;
+
+        // Confirm database and transaction before posting
+
+        var confirmation = MessageBox.Show(
+            $"DATABASE:\n{SessionContext.DatabaseFileName}\n\n" +
+            $"Company: Bharat Electronics\n" +
+            $"Sale Date: {saleDate:dd-MMM-yyyy}\n" +
+            $"Reference: {reference}\n\n" +
+            $"Quantity: {quantity}\n" +
+            $"Selling Price: Rs.{sellingPrice:N2}\n" +
+            $"Sale Proceeds: Rs.{proceeds:N2}\n\n" +
+            $"Broker AccountId: {brokerAccountId}\n\n" +
+            "WARNING: THIS WILL POST ACTUAL DATABASE RECORDS.\n\n" +
+            "POST SHARE SALE?",
+            "LedgerLens - Confirm Share Sale",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirmation != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            long unix = service.PostShareSale(
+                shareId,
+                SessionContext.SelectedYearId,
+                saleDate,
+                quantity,
+                sellingPrice,
+                brokerAccountId,
+                reference,
+                narration,
+                SessionContext.LTCGAccountCode,
+                SessionContext.STCGAccountCode,
+                SessionContext.LTCLAccountCode,
+                SessionContext.STCLAccountCode);
+
+            MessageBox.Show(
+                "SHARE SALE POSTED SUCCESSFULLY!\n\n" +
+                $"UNIX: {unix}\n" +
+                $"Reference: {reference}\n" +
+                $"Quantity Sold: {quantity}\n" +
+                $"Sale Proceeds: Rs.{proceeds:N2}",
+                "LedgerLens - Share Sale Saved",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "SHARE SALE POSTING FAILED.\n\n" +
+                ex.Message,
+                "LedgerLens - Posting Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
     private void SubledgerJournal_Click(
         object sender,
