@@ -173,6 +173,32 @@ public partial class MainWindow : Window
 
         ContentArea.Content = view;
     }
+    private void ShareSales_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+        var view = new ShareSalesView
+        {
+            LedgerAccountRepository =
+                new LedgerAccountRepository(factory),
+
+            CompanyRepository =
+                new CompanyRepository(factory),
+
+            ShareSaleService =
+                new ShareSaleService(factory)
+        };
+
+        view.LoadAccounts();
+
+        ContentArea.Content = view;
+    }
     private void BankEntry_Click(object sender, RoutedEventArgs e)
     {
         var options = Options.Create(new OleDbOptions
@@ -441,7 +467,7 @@ public partial class MainWindow : Window
         });
 
         var factory = new OleDbConnectionFactory(options);
-        TestShareLots();
+        //TestShareLots();
         var view = new SubledgerJournalView
         {
             LedgerAccountRepository =

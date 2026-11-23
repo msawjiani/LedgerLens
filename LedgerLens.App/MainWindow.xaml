@@ -202,6 +202,7 @@
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Share Sale"
+                                    Click="ShareSales_Click"
                             Style="{StaticResource SidebarButtonStyle}"/>
 
                             <Button Content="Subledger Journal"
