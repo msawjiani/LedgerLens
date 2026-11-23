@@ -32,6 +32,11 @@ namespace LedgerLens.App.Views
             get;
             set;
         }
+        public ShareSalePostingService? ShareSalePostingService
+        {
+            get;
+            set;
+        }
 
         public CompanyRepository? CompanyRepository { get; set; }
 
@@ -162,6 +167,27 @@ namespace LedgerLens.App.Views
         {
             if (!ValidateSaleDate(out DateTime saleDate))
                 return;
+            if (!ValidateJournalDetails())
+                return;
+
+            if (!ValidateSaleValues(
+                    out decimal quantity,
+                    out decimal sellingRate))
+                return;
+
+            if (!ValidateSelectedCompany(quantity, out var holding))
+                return;
+
+            if (!ValidateGLAccounts())
+                return;
+            if (!ShowSalePreview(
+                holding!,
+                quantity,
+                sellingRate))
+                {
+                    return;
+                }
+
 
             MessageBox.Show(
                 $"Share Sale Date: {saleDate:dd-MMM-yyyy}\n\n" +
@@ -213,6 +239,245 @@ namespace LedgerLens.App.Views
                 return false;
             }
 
+            return true;
+        }
+        // STEP 6G - Validate Reference and Narration
+
+        private bool ValidateJournalDetails()
+        {
+            if (string.IsNullOrWhiteSpace(ReferenceTextBox.Text))
+            {
+                MessageBox.Show(
+                    "Reference cannot be blank.",
+                    "Invalid Reference",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                ReferenceTextBox.Focus();
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(NarrationTextBox.Text))
+            {
+                MessageBox.Show(
+                    "Narration cannot be blank.",
+                    "Invalid Narration",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                NarrationTextBox.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        // STEP 6H.1 - Validate Quantity and Selling Rate
+
+        private bool ValidateSaleValues(
+            out decimal quantity,
+            out decimal sellingRate)
+        {
+            quantity = 0m;
+            sellingRate = 0m;
+
+            if (!decimal.TryParse(
+                QuantityTextBox.Text.Trim(),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out quantity) ||
+                quantity <= 0m ||
+                quantity > 999999999m ||
+                decimal.Round(quantity, 6) != quantity)
+            {
+                MessageBox.Show(
+                    "Enter a valid positive quantity with a maximum of six decimal places.",
+                    "Invalid Quantity",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                QuantityTextBox.Focus();
+                return false;
+            }
+
+            if (!decimal.TryParse(
+                SellingRateTextBox.Text.Trim(),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out sellingRate) ||
+                sellingRate <= 0m ||
+                decimal.Round(sellingRate, 6) != sellingRate)
+            {
+                MessageBox.Show(
+                    "Enter a valid positive selling rate with a maximum of six decimal places.",
+                    "Invalid Selling Rate",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                SellingRateTextBox.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        // STEP 6I.1 - Validate selected company
+
+        private bool ValidateSelectedCompany(
+            decimal quantity,
+            out ShareSaleHolding? holding)
+        {
+            holding = CompanyGrid.SelectedItem as ShareSaleHolding;
+
+            if (holding == null)
+            {
+                MessageBox.Show(
+                    "Please select a company from the grid.",
+                    "Company Not Selected",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                CompanyGrid.Focus();
+                return false;
+            }
+
+            if (quantity > holding.AvailableQty)
+            {
+                MessageBox.Show(
+                    $"Insufficient shares available.\n\n" +
+                    $"Company: {holding.Company}\n" +
+                    $"Available: {holding.AvailableQty:0.######}\n" +
+                    $"Requested: {quantity:0.######}",
+                    "Insufficient Shares",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                QuantityTextBox.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        // STEP 6I.2 - Validate GL Account Selections
+
+        private bool ValidateGLAccounts()
+        {
+            if (BrokerAccountCombo.SelectedItem is not LedgerAccount broker)
+            {
+                MessageBox.Show(
+                    "Please select a Broker Account.",
+                    "Broker Account Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                BrokerAccountCombo.Focus();
+                return false;
+            }
+
+            if (SharesAccountCombo.SelectedItem is not LedgerAccount shares)
+            {
+                MessageBox.Show(
+                    "Please select a Shares Account.",
+                    "Shares Account Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                SharesAccountCombo.Focus();
+                return false;
+            }
+
+            if (broker.AccountId == shares.AccountId)
+            {
+                MessageBox.Show(
+                    "Broker Account and Shares Account cannot be the same.",
+                    "Invalid GL Selection",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return false;
+            }
+
+            return true;
+        }
+        // STEP 6J - Display FIFO Preview
+
+        private bool ShowSalePreview(
+            ShareSaleHolding holding,
+            decimal quantity,
+            decimal sellingRate)
+        {
+            if (ShareSalePostingService == null)
+            {
+                MessageBox.Show(
+                    "Share Sale Posting Service is not initialized.");
+                return false; ;
+            }
+
+            if (!ValidateSaleDate(out DateTime saleDate))
+                return false; ;
+
+            try
+            {
+                var entries = ShareSalePostingService.PrepareSale(
+                    holding.ShareId,
+                    saleDate,
+                    quantity,
+                    sellingRate);
+                // STEP 6K.4 - Verify Shares-at-Cost Account
+
+                if (SharesAccountCombo.SelectedItem is not LedgerAccount sharesAccount)
+                {
+                    throw new InvalidOperationException(
+                        "Please select a Shares Account.");
+                }
+
+                if (entries.Any(x =>
+                    x.SharesAtCostAccountId != sharesAccount.AccountId))
+                {
+                    throw new InvalidOperationException(
+                        "FIFO allocations contain purchases from a different " +
+                        "Shares-at-Cost account.\n\n" +
+                        "The sale cannot proceed with this account selection.");
+                }
+                string result =
+                    $"COMPANY: {holding.Company}\n" +
+                    $"QUANTITY: {quantity:0.######}\n" +
+                    $"SELLING RATE: {sellingRate:N2}\n\n";
+
+                foreach (var entry in entries)
+                {
+                    result +=
+                        $"Purchase Lot: {entry.PurchaseTransId}\n" +
+                        $"Qty Sold: {entry.QtySold:0.######}\n" +
+                        $"Purchase Cost: {entry.PurchaseCost:N2}\n" +
+                        $"Sale Proceeds: {entry.SaleProceeds:N2}\n" +
+                        $"Gain/Loss: {entry.GainLoss:N2} " +
+                        $"({entry.Classification})\n\n";
+                }
+                
+
+                result +=
+                    $"TOTAL COST: {entries.Sum(x => x.PurchaseCost):N2}\n" +
+                    $"TOTAL PROCEEDS: {entries.Sum(x => x.SaleProceeds):N2}\n" +
+                    $"NET GAIN/LOSS: {entries.Sum(x => x.GainLoss):N2}\n\n" +
+                    "PREVIEW ONLY — NO DATABASE POSTING.";
+
+                MessageBox.Show(
+                    result,
+                    "LedgerLens - Share Sales FIFO Preview",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Share Sales Preview Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                 return false;
+            }
             return true;
         }
     }

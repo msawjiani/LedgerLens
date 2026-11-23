@@ -192,7 +192,11 @@ public partial class MainWindow : Window
                 new CompanyRepository(factory),
 
             ShareSaleService =
-                new ShareSaleService(factory)
+                new ShareSaleService(factory),
+            ShareSalePostingService =
+                new ShareSalePostingService(
+                    factory,
+                    new TransactionRepository(factory))
         };
 
         view.LoadAccounts();

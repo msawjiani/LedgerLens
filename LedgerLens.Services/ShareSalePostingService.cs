@@ -142,42 +142,164 @@ namespace LedgerLens.Services
             decimal quantity,
             decimal sellingPrice)
         {
-            var details =
-                _shareSaleService.CalculateSaleDetails(
+            using var con = _factory.CreateOpen();
+            using var tx = con.BeginTransaction();
+
+            try
+            {
+                // Use our shared FIFO calculation engine.
+
+                var result = CalculateSaleLines(
                     shareId,
                     saleDate,
                     quantity,
-                    sellingPrice);
+                    sellingPrice,
+                    tx);
 
-            var result = details.Select(x =>
+                // Preview is READ ONLY.
+                // No database changes are committed.
+
+                tx.Rollback();
+
+                return result;
+            }
+            catch
             {
-                if (x.Lot.SharesAtCostAccountId <= 0)
+                try
+                {
+                    tx.Rollback();
+                }
+                catch
+                {
+                    // Preserve the original exception.
+                }
+
+                throw;
+            }
+        }
+
+        // STEP 6K.1 - Shared FIFO Sale Calculation
+        // Will be used by both Preview and Posting.
+
+        private List<(
+            int PurchaseTransId,
+            int SharesAtCostAccountId,
+            decimal QtySold,
+            decimal PurchaseCost,
+            decimal SaleProceeds,
+            decimal GainLoss,
+            string Classification)> CalculateSaleLines(
+                int shareId,
+                DateTime saleDate,
+                decimal quantity,
+                decimal sellingPrice,
+                OleDbTransaction tx)
+        {
+            if (sellingPrice <= 0m)
+                throw new InvalidOperationException(
+                    "Selling price must be positive.");
+
+            // Retrieve FIFO allocations within the transaction.
+
+            var allocations = AllocateFIFOForPosting(
+                shareId,
+                saleDate,
+                quantity,
+                tx);
+
+            decimal expectedProceeds = decimal.Round(
+                quantity * sellingPrice,
+                2,
+                MidpointRounding.AwayFromZero);
+
+            decimal allocatedProceeds = 0m;
+
+            var result = new List<(
+                int PurchaseTransId,
+                int SharesAtCostAccountId,
+                decimal QtySold,
+                decimal PurchaseCost,
+                decimal SaleProceeds,
+                decimal GainLoss,
+                string Classification)>();
+
+            for (int i = 0; i < allocations.Count; i++)
+            {
+                var allocation = allocations[i];
+
+                var lot = allocation.Lot;
+
+                decimal qtySold = allocation.QtySold;
+
+                // Calculate original purchase cost.
+
+                decimal purchaseCost = decimal.Round(
+                    qtySold * lot.PurchaseRate,
+                    2,
+                    MidpointRounding.AwayFromZero);
+
+                // CORRECTION 1:
+                // When exhausting a purchase lot,
+                // remove its exact remaining recorded cost.
+
+                if (qtySold == lot.Balance)
+                {
+                    purchaseCost = GetRemainingRecordedCost(
+                        shareId,
+                        lot,
+                        tx);
+                }
+
+                // Calculate sale proceeds.
+
+                decimal saleProceeds = decimal.Round(
+                    qtySold * sellingPrice,
+                    2,
+                    MidpointRounding.AwayFromZero);
+
+                // CORRECTION 2:
+                // Final FIFO allocation absorbs rounding difference.
+
+                if (i == allocations.Count - 1)
+                {
+                    saleProceeds =
+                        expectedProceeds - allocatedProceeds;
+                }
+
+                if (saleProceeds < 0m)
                     throw new InvalidOperationException(
-                        "Invalid Shares-at-Cost AccountId.");
+                        "Invalid FIFO rounding adjustment.");
+
+                allocatedProceeds += saleProceeds;
+
+                // Gain/Loss calculated AFTER both corrections.
+
+                decimal gainLoss = saleProceeds - purchaseCost;
 
                 string classification =
                     _shareSaleService.ClassifyCapitalGain(
-                        x.Lot.PurchaseDate,
+                        lot.PurchaseDate,
                         saleDate,
-                        x.GainLoss);
+                        gainLoss);
 
-                return (
-                    PurchaseTransId: x.Lot.PurchaseTransId,
-                    SharesAtCostAccountId:
-                        x.Lot.SharesAtCostAccountId,
-                    QtySold: x.QtySold,
-                    PurchaseCost: x.PurchaseCost,
-                    SaleProceeds: x.SaleProceeds,
-                    GainLoss: x.GainLoss,
-                    Classification: classification
-                );
-            }).ToList();
+                result.Add((
+                    lot.PurchaseTransId,
+                    lot.SharesAtCostAccountId,
+                    qtySold,
+                    purchaseCost,
+                    saleProceeds,
+                    gainLoss,
+                    classification
+                ));
+            }
 
+            // Final verification.
 
-
-            // Verify accounting balance
-            decimal totalProceeds =
-                result.Sum(x => x.SaleProceeds);
+            if (allocatedProceeds != expectedProceeds)
+            {
+                throw new InvalidOperationException(
+                    "FIFO sale proceeds do not reconcile.");
+            }
 
             decimal totalCost =
                 result.Sum(x => x.PurchaseCost);
@@ -185,9 +307,11 @@ namespace LedgerLens.Services
             decimal totalGainLoss =
                 result.Sum(x => x.GainLoss);
 
-            if (totalProceeds != totalCost + totalGainLoss)
+            if (allocatedProceeds != totalCost + totalGainLoss)
+            {
                 throw new InvalidOperationException(
-                    "Share Sale accounting does not balance.");
+                    "Share Sale calculations do not balance.");
+            }
 
             return result;
         }
@@ -337,7 +461,52 @@ namespace LedgerLens.Services
                     saleDate,
                     quantity,
                     tx);
+                // STEP 6K.3 - Use the same calculations as FIFO Preview
 
+                var saleLines = CalculateSaleLines(
+                    shareId,
+                    saleDate,
+                    quantity,
+                    sellingPrice,
+                    tx);
+
+                if (saleLines.Count != allocations.Count)
+                {
+                    throw new InvalidOperationException(
+                        "FIFO allocation count mismatch.");
+                }
+
+                // STEP 6L - Validate original Shares-at-Cost account
+
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+
+                    cmd.CommandText =
+                        "SELECT AccountId FROM SharesChart WHERE ShareId = ?";
+
+                    cmd.Parameters.AddWithValue("@p1", shareId);
+
+                    object? result = cmd.ExecuteScalar();
+
+                    if (result == null || result == DBNull.Value)
+                    {
+                        throw new InvalidOperationException(
+                            "Company not found in SharesChart.");
+                    }
+
+                    int registeredSharesAccountId = Convert.ToInt32(result);
+
+                    if (registeredSharesAccountId <= 0 ||
+                        saleLines.Any(x =>
+                            x.SharesAtCostAccountId != registeredSharesAccountId))
+                    {
+                        throw new InvalidOperationException(
+                            "Shares-at-Cost account mismatch.\n\n" +
+                            "The original purchase account does not match " +
+                            "the company account in SharesChart.");
+                    }
+                }
                 // 5. Generate ONE UNIX for entire sale
 
                 int unix = checked((int)_repo.GetNextUnix(tx));
@@ -360,58 +529,33 @@ namespace LedgerLens.Services
 
                     var lot = allocation.Lot;
 
-                    decimal qtySold = allocation.QtySold;
+                    // STEP 6K.3 - Read values from shared calculation engine
 
-                    decimal purchaseCost = decimal.Round(
-                        qtySold * lot.PurchaseRate,
-                        2,
-                        MidpointRounding.AwayFromZero);
+                    var line = saleLines[i];
 
-                    // Calculate sale proceeds for this FIFO allocation
+                    // Verify FIFO allocation corresponds to the correct lot
 
-                    decimal saleProceeds = decimal.Round(
-                        qtySold * sellingPrice,
-                        2,
-                        MidpointRounding.AwayFromZero);
-
-                    // Last FIFO allocation absorbs the rounding difference
-
-                    if (qtySold == lot.Balance)
-                    {
-                        purchaseCost = GetRemainingRecordedCost(
-                            shareId,
-                            lot,
-                            tx);
-                    }
-
-                    if (i == allocations.Count - 1)
-                    {
-                        saleProceeds =
-                            expectedSaleProceeds - allocatedSaleProceeds;
-                    }
-
-                    // Safety check
-
-                    if (saleProceeds < 0m)
+                    if (line.PurchaseTransId != lot.PurchaseTransId ||
+                        line.QtySold != allocation.QtySold ||
+                        line.SharesAtCostAccountId != lot.SharesAtCostAccountId)
                     {
                         throw new InvalidOperationException(
-                            "Invalid FIFO rounding adjustment. " +
-                            "Final allocation proceeds cannot be negative.");
+                            "FIFO purchase lot mismatch during posting.");
                     }
 
+                    decimal qtySold = line.QtySold;
+
+                    decimal purchaseCost = line.PurchaseCost;
+
+                    decimal saleProceeds = line.SaleProceeds;
+
+                    decimal gainLoss = line.GainLoss;
+
+                    string classification = line.Classification;
+
+                    // Retain existing total proceeds verification
+
                     allocatedSaleProceeds += saleProceeds;
-
-                    // IMPORTANT: Calculate gain/loss AFTER rounding adjustment
-
-                    decimal gainLoss = saleProceeds - purchaseCost;
-
-                    // Identify Capital Gain/Loss classification
-
-                    string classification =
-                        _shareSaleService.ClassifyCapitalGain(
-                            lot.PurchaseDate,
-                            saleDate,
-                            gainLoss);
                     // STEP 5F - Detailed Share Sale Narration
 
                     // Detailed narration for each FIFO purchase lot
