@@ -325,6 +325,14 @@ public partial class MainWindow : Window
 
     // STEP 5E - First Actual Share Sales Posting Test
 
+    // STEP 5H.1 - Fractional Share Sales Rounding Test
+
+    // STEP 5H.2 - Multiple FIFO Lots Rounding Test
+
+    // STEP 5H.4 - Deliberate Rounding Difference Test
+
+    // STEP 5H.9 - Actual Fractional Share Sale Test
+
     private void TestShareLots()
     {
         var options = Options.Create(new OleDbOptions
@@ -338,35 +346,47 @@ public partial class MainWindow : Window
             factory,
             new TransactionRepository(factory));
 
-        // Test transaction details
-
-        int shareId = 2551;
+        int shareId = 2540;
         int brokerAccountId = 337;
 
         DateTime saleDate = new DateTime(2024, 11, 20);
 
-        decimal quantity = 35m;
-        decimal sellingPrice = 180m;
+        decimal quantity = 1.0000m;
+        decimal sellingPrice = 1.00m;
 
-        string reference = "SS001";
-        string narration = "Test Sale of Bharat Electronics";
+        string reference = "MFROUNDTEST";
+        string narration = "Fractional Mutual Fund Rounding Test";
 
-        decimal proceeds = quantity * sellingPrice;
+        // Verify capital loss account mapping
 
-        // Confirm database and transaction before posting
+        if (SessionContext.STCLAccountCode != 302)
+        {
+            MessageBox.Show(
+                "STCL AccountId must be 302 for this test database.",
+                "Account Mapping Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        // Confirm before posting
 
         var confirmation = MessageBox.Show(
             $"DATABASE:\n{SessionContext.DatabaseFileName}\n\n" +
-            $"Company: Bharat Electronics\n" +
+
+            $"ShareId: {shareId}\n" +
             $"Sale Date: {saleDate:dd-MMM-yyyy}\n" +
-            $"Reference: {reference}\n\n" +
             $"Quantity: {quantity}\n" +
-            $"Selling Price: Rs.{sellingPrice:N2}\n" +
-            $"Sale Proceeds: Rs.{proceeds:N2}\n\n" +
-            $"Broker AccountId: {brokerAccountId}\n\n" +
-            "WARNING: THIS WILL POST ACTUAL DATABASE RECORDS.\n\n" +
-            "POST SHARE SALE?",
-            "LedgerLens - Confirm Share Sale",
+            $"Selling Rate: {sellingPrice:N2}\n\n" +
+
+            $"Expected Sale Proceeds: Rs.1.00\n" +
+            $"Expected Purchase Cost: Rs.1.01\n" +
+            $"Expected STCL: Rs.0.01\n\n" +
+
+            "POST THIS FRACTIONAL SHARE SALE?",
+
+            "LedgerLens - Fractional Sale Test",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 
@@ -390,21 +410,20 @@ public partial class MainWindow : Window
                 SessionContext.STCLAccountCode);
 
             MessageBox.Show(
-                "SHARE SALE POSTED SUCCESSFULLY!\n\n" +
+                "FRACTIONAL SHARE SALE POSTED!\n\n" +
                 $"UNIX: {unix}\n" +
-                $"Reference: {reference}\n" +
-                $"Quantity Sold: {quantity}\n" +
-                $"Sale Proceeds: Rs.{proceeds:N2}",
-                "LedgerLens - Share Sale Saved",
+                $"Quantity: {quantity}\n" +
+                $"Reference: {reference}\n\n" +
+                "Please verify GeneralLedger, ShareSales and qryZERO.",
+                "LedgerLens - Sale Successful",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                "SHARE SALE POSTING FAILED.\n\n" +
-                ex.Message,
-                "LedgerLens - Posting Error",
+                $"Posting failed:\n\n{ex.Message}",
+                "LedgerLens - Share Sale Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }

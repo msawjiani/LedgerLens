@@ -346,9 +346,18 @@ namespace LedgerLens.Services
                 decimal totalCredit = 0m;
 
                 // 6. Process each FIFO allocation
+                // STEP 5H.7 - Correct total proceeds for fractional sales
 
-                foreach (var allocation in allocations)
+                decimal expectedSaleProceeds = decimal.Round(
+                    quantity * sellingPrice,
+                    2,
+                    MidpointRounding.AwayFromZero);
+
+                decimal allocatedSaleProceeds = 0m;
+                for (int i = 0; i < allocations.Count; i++)
                 {
+                    var allocation = allocations[i];
+
                     var lot = allocation.Lot;
 
                     decimal qtySold = allocation.QtySold;
@@ -358,10 +367,33 @@ namespace LedgerLens.Services
                         2,
                         MidpointRounding.AwayFromZero);
 
+                    // Calculate sale proceeds for this FIFO allocation
+
                     decimal saleProceeds = decimal.Round(
                         qtySold * sellingPrice,
                         2,
                         MidpointRounding.AwayFromZero);
+
+                    // Last FIFO allocation absorbs the rounding difference
+
+                    if (i == allocations.Count - 1)
+                    {
+                        saleProceeds =
+                            expectedSaleProceeds - allocatedSaleProceeds;
+                    }
+
+                    // Safety check
+
+                    if (saleProceeds < 0m)
+                    {
+                        throw new InvalidOperationException(
+                            "Invalid FIFO rounding adjustment. " +
+                            "Final allocation proceeds cannot be negative.");
+                    }
+
+                    allocatedSaleProceeds += saleProceeds;
+
+                    // IMPORTANT: Calculate gain/loss AFTER rounding adjustment
 
                     decimal gainLoss = saleProceeds - purchaseCost;
 
@@ -501,6 +533,15 @@ namespace LedgerLens.Services
 
                     _repo.InsertShareSale(
                         shareSale, tx);
+                }
+                // Verify sale proceeds match the complete transaction
+
+                if (allocatedSaleProceeds != expectedSaleProceeds)
+                {
+                    throw new InvalidOperationException(
+                        "FIFO sale proceeds do not match total sale value.\n\n" +
+                        $"Expected: {expectedSaleProceeds:N2}\n" +
+                        $"Allocated: {allocatedSaleProceeds:N2}");
                 }
 
                 // 11. Final accounting balance check
