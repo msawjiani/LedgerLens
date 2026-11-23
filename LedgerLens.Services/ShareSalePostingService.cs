@@ -376,6 +376,14 @@ namespace LedgerLens.Services
 
                     // Last FIFO allocation absorbs the rounding difference
 
+                    if (qtySold == lot.Balance)
+                    {
+                        purchaseCost = GetRemainingRecordedCost(
+                            shareId,
+                            lot,
+                            tx);
+                    }
+
                     if (i == allocations.Count - 1)
                     {
                         saleProceeds =
@@ -573,6 +581,124 @@ namespace LedgerLens.Services
 
                 throw;
             }
+        }
+        // STEP 5H.10D
+        // Retrieve the remaining recorded cost of a purchase lot.
+
+        private static decimal GetRemainingRecordedCost(
+            int shareId,
+            ShareSaleLot lot,
+            OleDbTransaction tx)
+        {
+            var con = tx.Connection
+                ?? throw new InvalidOperationException(
+                    "Database transaction is not active.");
+
+            decimal originalCost;
+
+            // 1. Retrieve original purchase GL amount.
+
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.Transaction = tx;
+
+                cmd.CommandText =
+                    """
+            SELECT gl.Amount, gl.AccountId
+            FROM SharePurchases AS sp
+            INNER JOIN GeneralLedger AS gl
+                ON sp.TransactionId = gl.TransactionId
+            WHERE sp.PurchaseTransId = ?
+              AND sp.ShareId = ?
+            """;
+
+                cmd.Parameters.AddWithValue(
+                    "@p1", lot.PurchaseTransId);
+
+                cmd.Parameters.AddWithValue(
+                    "@p2", shareId);
+
+                using var reader = cmd.ExecuteReader();
+
+                if (reader == null || !reader.Read())
+                    throw new InvalidOperationException(
+                        "Original purchase transaction not found.");
+
+                int accountId =
+                    Convert.ToInt32(reader["AccountId"]);
+
+                if (accountId != lot.SharesAtCostAccountId)
+                    throw new InvalidOperationException(
+                        "Original purchase GL account mismatch.");
+
+                originalCost = decimal.Round(
+                    Convert.ToDecimal(reader["Amount"]),
+                    2,
+                    MidpointRounding.AwayFromZero);
+
+                if (originalCost < 0m)
+                    throw new InvalidOperationException(
+                        "Invalid original purchase cost.");
+            }
+
+            // 2. Retrieve the cost removed by previous sales.
+
+            decimal costAlreadyRemoved = 0m;
+
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.Transaction = tx;
+
+                cmd.CommandText =
+                    """
+            SELECT gl.Amount, gl.AccountId
+            FROM ShareSales AS ss
+            INNER JOIN GeneralLedger AS gl
+                ON ss.TransactionId = gl.TransactionId
+            WHERE ss.PurchaseTransId = ?
+              AND ss.ShareId = ?
+            """;
+
+                cmd.Parameters.AddWithValue(
+                    "@p1", lot.PurchaseTransId);
+
+                cmd.Parameters.AddWithValue(
+                    "@p2", shareId);
+
+                using var reader = cmd.ExecuteReader();
+
+                while (reader != null && reader.Read())
+                {
+                    int accountId =
+                        Convert.ToInt32(reader["AccountId"]);
+
+                    decimal amount = decimal.Round(
+                        Convert.ToDecimal(reader["Amount"]),
+                        2,
+                        MidpointRounding.AwayFromZero);
+
+                    if (accountId != lot.SharesAtCostAccountId ||
+                        amount > 0m)
+                    {
+                        throw new InvalidOperationException(
+                            "Invalid previous share sale cost entry.");
+                    }
+
+                    // Sales are credits (negative GL amounts).
+                    costAlreadyRemoved -= amount;
+                }
+            }
+
+            // 3. Calculate exact remaining recorded cost.
+
+            decimal remainingCost =
+                originalCost - costAlreadyRemoved;
+
+            if (remainingCost < 0m)
+                throw new InvalidOperationException(
+                    "Remaining purchase cost cannot be negative.");
+
+            return remainingCost;
         }
     }
 }

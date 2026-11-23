@@ -349,13 +349,15 @@ public partial class MainWindow : Window
         int shareId = 2540;
         int brokerAccountId = 337;
 
-        DateTime saleDate = new DateTime(2024, 11, 20);
 
-        decimal quantity = 1.0000m;
-        decimal sellingPrice = 1.00m;
+        DateTime saleDate = new DateTime(2024, 11, 22);
 
-        string reference = "MFROUNDTEST";
-        string narration = "Fractional Mutual Fund Rounding Test";
+        decimal quantity = 0.3334m;
+        decimal sellingPrice = 125m;
+
+        string reference = "MFPART3";
+        string narration = "Third Partial Sale - MF Rounding Test";
+
 
         // Verify capital loss account mapping
 
@@ -380,9 +382,10 @@ public partial class MainWindow : Window
             $"Quantity: {quantity}\n" +
             $"Selling Rate: {sellingPrice:N2}\n\n" +
 
-            $"Expected Sale Proceeds: Rs.1.00\n" +
-            $"Expected Purchase Cost: Rs.1.01\n" +
-            $"Expected STCL: Rs.0.01\n\n" +
+            $"Expected Sale Proceeds: Rs." +
+            $"{decimal.Round(quantity * sellingPrice, 2, MidpointRounding.AwayFromZero):N2}\n\n" +
+            "Purchase Cost and Capital Gain/Loss " +
+"will be calculated using FIFO.\n\n" +
 
             "POST THIS FRACTIONAL SHARE SALE?",
 
