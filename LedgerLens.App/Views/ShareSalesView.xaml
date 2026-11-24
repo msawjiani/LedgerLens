@@ -192,7 +192,7 @@
                     Background="#168A60"
                     Foreground="White"
                     FontWeight="SemiBold"
-                    Click="TestSaleDate_Click"
+                    Click="SaveShareSale_Click"
                     IsEnabled="True"/>
         </Grid>
 

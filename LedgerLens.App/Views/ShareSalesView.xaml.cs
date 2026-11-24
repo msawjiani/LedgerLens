@@ -161,43 +161,176 @@ namespace LedgerLens.App.Views
 
         // STEP 6F.2 - Temporary Date Validation Test
 
-        private void TestSaleDate_Click(
+        // STEP 6M - FINAL SHARE SALES POSTING
+
+        private void SaveShareSale_Click(
             object sender,
             RoutedEventArgs e)
         {
+            // 1. Validate Date
+
             if (!ValidateSaleDate(out DateTime saleDate))
                 return;
-            if (!ValidateJournalDetails())
-                return;
 
-            if (!ValidateSaleValues(
-                    out decimal quantity,
-                    out decimal sellingRate))
-                return;
-
-            if (!ValidateSelectedCompany(quantity, out var holding))
-                return;
+            // 2. Validate GL Accounts
 
             if (!ValidateGLAccounts())
                 return;
+
+            // 3. Validate Reference and Narration
+
+            if (!ValidateJournalDetails())
+                return;
+
+            // 4. Validate Quantity and Selling Rate
+
+            if (!ValidateSaleValues(
+                out decimal quantity,
+                out decimal sellingRate))
+                return;
+
+            // 5. Validate Company Selection
+
+            if (!ValidateSelectedCompany(
+                quantity,
+                out var holding))
+                return;
+
+            if (holding == null)
+                return;
+
+            // 6. Retrieve Selected Accounts
+
+            if (BrokerAccountCombo.SelectedItem
+                is not LedgerAccount broker)
+                return;
+
+            if (SharesAccountCombo.SelectedItem
+                is not LedgerAccount sharesAccount)
+                return;
+
+            if (ShareSalePostingService == null)
+            {
+                MessageBox.Show(
+                    "Share Sale Posting Service is not initialized.",
+                    "Share Sales",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            // 7. Display FIFO Preview
+            // Stop immediately if preview fails.
+
             if (!ShowSalePreview(
-                holding!,
+                holding,
                 quantity,
                 sellingRate))
-                {
-                    return;
-                }
+                return;
 
+            // 8. Calculate Expected Sale Proceeds
 
-            MessageBox.Show(
-                $"Share Sale Date: {saleDate:dd-MMM-yyyy}\n\n" +
-                $"FY Start: {SessionContext.SelectedStartDate:dd-MMM-yyyy}\n" +
-                $"FY End: {SessionContext.SelectedEndDate:dd-MMM-yyyy}\n\n" +
-                "DATE VALIDATION PASSED\n\n" +
-                "TEST ONLY - No database posting.",
-                "LedgerLens - Share Sales Date Test",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            decimal expectedProceeds = decimal.Round(
+                quantity * sellingRate,
+                2,
+                MidpointRounding.AwayFromZero);
+
+            string reference = ReferenceTextBox.Text.Trim();
+            string narration = NarrationTextBox.Text.Trim();
+
+            // 9. FINAL CONFIRMATION
+
+            var confirmation = MessageBox.Show(
+
+                $"DATABASE:\n{SessionContext.DatabaseFileName}\n\n" +
+
+                $"Company: {holding.Company}\n" +
+                $"ShareId: {holding.ShareId}\n\n" +
+
+                $"Broker Account:\n{broker.Account}\n\n" +
+
+                $"Shares Account:\n{sharesAccount.Account}\n\n" +
+
+                $"Sale Date: {saleDate:dd-MMM-yyyy}\n" +
+                $"Reference: {reference}\n\n" +
+
+                $"Quantity: {quantity:0.######}\n" +
+                $"Selling Rate: Rs.{sellingRate:N2}\n" +
+
+                $"SALE PROCEEDS: Rs.{expectedProceeds:N2}\n\n" +
+
+                "POST THIS SHARE SALE?\n\n" +
+                "This operation will update GeneralLedger and ShareSales.",
+
+                "LedgerLens - Confirm Share Sale Posting",
+
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirmation != MessageBoxResult.Yes)
+                return;
+
+            // 10. Disable SAVE to prevent repeated clicks
+
+            SaveShareSaleButton.IsEnabled = false;
+
+            try
+            {
+                // 11. ATOMIC DATABASE POSTING
+
+                long unix = ShareSalePostingService.PostShareSale(
+
+                    holding.ShareId,
+                    SessionContext.SelectedYearId,
+                    saleDate,
+                    quantity,
+                    sellingRate,
+                    broker.AccountId,
+                    reference,
+                    narration,
+
+                    SessionContext.LTCGAccountCode,
+                    SessionContext.STCGAccountCode,
+                    SessionContext.LTCLAccountCode,
+                    SessionContext.STCLAccountCode);
+
+                // 12. SUCCESS
+
+                MessageBox.Show(
+
+                    "SHARE SALE POSTED SUCCESSFULLY!\n\n" +
+
+                    $"UNIX: {unix}\n" +
+                    $"Company: {holding.Company}\n" +
+                    $"Quantity Sold: {quantity:0.######}\n" +
+                    $"Sale Proceeds: Rs.{expectedProceeds:N2}\n\n" +
+
+                    "GeneralLedger and ShareSales updated.\n\n" +
+                    "Please verify Trial Balance.",
+
+                    "LedgerLens - Share Sale Saved",
+
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                // Leave SAVE disabled after successful posting.
+                // Reopen Share Sales for the next transaction.
+            }
+            catch (Exception ex)
+            {
+                SaveShareSaleButton.IsEnabled = true;
+
+                MessageBox.Show(
+
+                    "SHARE SALE POSTING FAILED.\n\n" +
+                    ex.Message,
+
+                    "LedgerLens - Posting Error",
+
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
         // STEP 6F.1 - Validate Share Sale Date
 

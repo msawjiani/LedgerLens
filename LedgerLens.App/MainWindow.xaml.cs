@@ -110,7 +110,8 @@ public partial class MainWindow : Window
             };
 
             ContentArea.Content = selectYearView;
-
+            // STEP 7A.4 - Temporary Closing Books Diagnostic
+            TestCloseBooksDiagnostic();
 
 
         }
@@ -490,5 +491,105 @@ public partial class MainWindow : Window
         view.LoadAccounts();
 
         ContentArea.Content = view;
+    }
+
+    // STEP 7A.3 - Closing Books Diagnostic
+    // READ ONLY - No database modifications
+
+    private void TestCloseBooksDiagnostic()
+    {
+        if (string.IsNullOrWhiteSpace(SessionContext.ConnectionString))
+        {
+            MessageBox.Show(
+                "Please select an Individual first.",
+                "Closing Books");
+            return;
+        }
+
+        try
+        {
+            var options = Options.Create(new OleDbOptions
+            {
+                ConnectionString = SessionContext.ConnectionString
+            });
+
+            var factory = new OleDbConnectionFactory(options);
+
+            var service = new CloseBooksService(factory);
+
+            string diagnostic = service.GetClosingDiagnostic(
+                SessionContext.SelectedYearId,
+                SessionContext.RetainedEarningsId);
+
+            MessageBox.Show(
+                diagnostic,
+                "LedgerLens - Closing Books Diagnostic",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            // STEP 7C.4 - Closing Entries Preview
+            // READ ONLY - NO DATABASE POSTING
+
+            var answer = MessageBox.Show(
+                "DATABASE:\n" +
+                SessionContext.DatabaseFileName +
+                "\n\nDisplay Closing Books Entry Preview?\n\n" +
+                "NO DATABASE CHANGES WILL BE MADE.",
+                "LedgerLens - Closing Preview",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            // STEP 7D.3 - Verify Closing Entries Draft
+            // READ ONLY - NO DATABASE POSTING
+
+            if (answer == MessageBoxResult.Yes)
+            {
+                var entries = service.BuildClosingEntriesDraft(
+                    SessionContext.SelectedYearId,
+                    SessionContext.RetainedEarningsId);
+
+                var closingEntries = entries
+                    .Where(x => x.Period ==
+                        ClosingEntryPeriod.ClosingYear)
+                    .ToList();
+
+                var openingEntries = entries
+                    .Where(x => x.Period ==
+                        ClosingEntryPeriod.OpeningYear)
+                    .ToList();
+
+                decimal closingTotal =
+                    closingEntries.Sum(x => x.Amount);
+
+                decimal openingTotal =
+                    openingEntries.Sum(x => x.Amount);
+
+                MessageBox.Show(
+                    "CLOSING BOOKS - DRAFT VERIFICATION\n\n" +
+
+                    $"Database:\n{SessionContext.DatabaseFileName}\n\n" +
+
+                    $"Total Entries: {entries.Count}\n\n" +
+
+                    $"Closing Year Entries: {closingEntries.Count}\n" +
+                    $"Closing Difference: Rs.{closingTotal:N2}\n\n" +
+
+                    $"Opening Year Entries: {openingEntries.Count}\n" +
+                    $"Opening Difference: Rs.{openingTotal:N2}\n\n" +
+
+                    "DRAFT GENERATED SUCCESSFULLY\n\n" +
+                    "NO DATABASE POSTING.",
+
+                    "LedgerLens - Closing Books Draft",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                ex.Message,
+                "Closing Books Diagnostic Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 }
