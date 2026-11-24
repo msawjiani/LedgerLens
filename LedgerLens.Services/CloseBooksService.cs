@@ -7,6 +7,13 @@ using System.Collections.Generic;
 
 using LedgerLens.Data.Abstractions;
 using LedgerLens.Data.Repositories;
+using System.Data.OleDb;
+
+using LedgerLens.Data.Models;
+
+
+using System.Collections.Generic;
+using System.Linq;
 
 
 namespace LedgerLens.Services
@@ -463,24 +470,55 @@ namespace LedgerLens.Services
 
         public List<ClosingEntryDraft> BuildClosingEntriesDraft(
             int selectedYearId,
-            int retainedEarningsAccountId)
+            int retainedEarningsAccountId,
+            OleDbTransaction? tx = null)
         {
-            var years = _yearRepository.GetAccountingYears();
+            DateTime closingDate;
 
-            var year = years.FirstOrDefault(
-                y => y.YearId == selectedYearId);
+            if (tx == null)
+            {
+                var years = _yearRepository.GetAccountingYears();
 
-            if (year == null)
-                throw new InvalidOperationException(
-                    "Selected accounting year not found.");
+                var year = years.FirstOrDefault(
+                    y => y.YearId == selectedYearId);
+
+                if (year == null)
+                    throw new InvalidOperationException(
+                        "Selected accounting year not found.");
+
+                closingDate = year.EndDate.Date;
+            }
+            else
+            {
+                if (tx.Connection == null)
+                    throw new InvalidOperationException(
+                        "An active transaction is required.");
+
+                using var yearCmd = tx.Connection.CreateCommand();
+
+                yearCmd.Transaction = tx;
+
+                yearCmd.CommandText =
+                    "SELECT [EndDate] FROM AccountYears " +
+                    "WHERE [YearId] = ?";
+
+                yearCmd.Parameters.AddWithValue(
+                    "@p1", selectedYearId);
+
+                object? result = yearCmd.ExecuteScalar();
+
+                if (result == null || result == DBNull.Value)
+                    throw new InvalidOperationException(
+                        "Selected accounting year not found.");
+
+                closingDate = Convert.ToDateTime(result).Date;
+            }
 
             if (retainedEarningsAccountId <= 0)
                 throw new InvalidOperationException(
                     "Retained Earnings account is not configured.");
 
-            DateTime closingDate = year.EndDate.Date;
             DateTime openingDate = closingDate.AddDays(1);
-
             var entries = new List<ClosingEntryDraft>();
 
             decimal netPL = 0m;
@@ -510,8 +548,17 @@ namespace LedgerLens.Services
                 });
             }
 
-            using var connection = _connectionFactory.CreateOpen();
-            using var command = connection.CreateCommand();
+            using var ownConnection =
+                tx == null ? _connectionFactory.CreateOpen() : null;
+
+            using var command =
+                (tx?.Connection ?? ownConnection
+                    ?? throw new InvalidOperationException(
+                        "Database connection is unavailable."))
+                .CreateCommand();
+
+            if (tx != null)
+                command.Transaction = tx;
 
             command.CommandText =
                 "SELECT AccountId, Account, Category, Total " +
@@ -653,6 +700,423 @@ namespace LedgerLens.Services
             }
 
             return entries;
+        }
+        // STEP 7D.8 - ATOMIC CLOSING BOOKS
+// Entire operation uses ONE OleDb transaction.
+
+public (
+    int NewYearId,
+    long Unix,
+    int EntriesPosted,
+    int HistoricalRows)
+PostClosingBooks(
+    int selectedYearId,
+    int retainedEarningsAccountId)
+{
+            using var con = _connectionFactory.CreateOpen();
+            using var tx = con.BeginTransaction();
+
+            string stage = "Validating Closing Books";
+
+            try
+            {
+        // ============================================
+        // 1. VERIFY LATEST ACCOUNTING YEAR
+        // ============================================
+
+        DateTime startDate;
+        DateTime endDate;
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                """
+                SELECT TOP 1 YearId, StartDate, EndDate
+                FROM AccountYears
+                ORDER BY EndDate DESC, YearId DESC
+                """;
+
+            using var reader = cmd.ExecuteReader();
+
+            if (reader == null || !reader.Read())
+                throw new InvalidOperationException(
+                    "No accounting year found.");
+
+            int latestYearId =
+                Convert.ToInt32(reader["YearId"]);
+
+            if (latestYearId != selectedYearId)
+                throw new InvalidOperationException(
+                    "Only the latest accounting year can be closed.");
+
+            startDate =
+                Convert.ToDateTime(reader["StartDate"]).Date;
+
+            endDate =
+                Convert.ToDateTime(reader["EndDate"]).Date;
+        }
+
+        if (DateTime.Today.Date <= endDate)
+            throw new InvalidOperationException(
+                "The financial year has not ended.");
+
+        DateTime nextStart = endDate.AddDays(1);
+        DateTime nextEnd = nextStart.AddYears(1).AddDays(-1);
+
+        // ============================================
+        // 2. PREVENT DUPLICATE CLOSING
+        // ============================================
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                """
+                SELECT COUNT(*)
+                FROM GeneralLedger
+                WHERE YearId = ?
+                  AND TDate >= ?
+                  AND TDate < ?
+                  AND TransactionType IN ('R*','C*','E*')
+                """;
+
+            cmd.Parameters.AddWithValue("@p1", selectedYearId);
+            cmd.Parameters.AddWithValue("@p2", endDate);
+            cmd.Parameters.AddWithValue(
+                "@p3", endDate.AddDays(1));
+
+            if (Convert.ToInt32(cmd.ExecuteScalar()) > 0)
+                throw new InvalidOperationException(
+                    "Closing entries already exist for this year.");
+        }
+
+        // ============================================
+        // 3. VERIFY RETAINED EARNINGS
+        // ============================================
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                "SELECT Category FROM Chart WHERE AccountId = ?";
+
+            cmd.Parameters.AddWithValue(
+                "@p1", retainedEarningsAccountId);
+
+            string category =
+                Convert.ToString(cmd.ExecuteScalar())?.Trim() ?? "";
+
+            if (!category.Equals(
+                    "RE", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(
+                    "Invalid Retained Earnings account.");
+        }
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                "SELECT SUM(Amount) FROM GeneralLedger WHERE AccountId = ?";
+
+            cmd.Parameters.AddWithValue(
+                "@p1", retainedEarningsAccountId);
+
+            object? result = cmd.ExecuteScalar();
+
+            decimal balance =
+                result == null || result == DBNull.Value
+                    ? 0m
+                    : Convert.ToDecimal(result);
+
+            if (balance != 0m)
+                throw new InvalidOperationException(
+                    "Retained Earnings must be ZERO before closing.");
+        }
+
+        // ============================================
+        // 4. VERIFY CUMULATIVE TRIAL BALANCE
+        // ============================================
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                "SELECT COUNT(*), SUM([Total]) FROM qryTrialBalance";
+
+            using var reader = cmd.ExecuteReader();
+
+            if (reader == null || !reader.Read())
+                throw new InvalidOperationException(
+                    "Unable to read Trial Balance.");
+
+            int count = Convert.ToInt32(reader.GetValue(0));
+
+            decimal difference = reader.IsDBNull(1)
+                ? 0m
+                : Convert.ToDecimal(reader.GetValue(1));
+
+            if (count == 0 || difference != 0m)
+                throw new InvalidOperationException(
+                    "Cumulative Trial Balance is not balanced.");
+        }
+
+        // ============================================
+        // 5. VERIFY ALL UNIX BALANCES
+        // ============================================
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                """
+                SELECT [Unix], SUM([Amount])
+                FROM GeneralLedger
+                GROUP BY [Unix]
+                """;
+
+            using var reader = cmd.ExecuteReader();
+
+            if (reader == null)
+                throw new InvalidOperationException(
+                    "Unable to verify UNIX balances.");
+
+            while (reader.Read())
+            {
+                if (reader.IsDBNull(0))
+                    throw new InvalidOperationException(
+                        "GeneralLedger contains a NULL UNIX.");
+
+                decimal balance = reader.IsDBNull(1)
+                    ? 0m
+                    : Convert.ToDecimal(reader.GetValue(1));
+
+                if (balance != 0m)
+                    throw new InvalidOperationException(
+                        $"UNIX {reader.GetValue(0)} is not balanced.");
+            }
+        }
+
+        // ============================================
+        // 6. CAPTURE HISTORICAL BALANCES
+        // BEFORE CLOSING ENTRIES
+        // ============================================
+
+        var historicalBalances =
+            new List<(int AccountId, decimal Balance)>();
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                "SELECT AccountId, [Total] FROM qryTrialBalance";
+
+            using var reader = cmd.ExecuteReader();
+
+            if (reader == null)
+                throw new InvalidOperationException(
+                    "Unable to capture historical balances.");
+
+            while (reader.Read())
+            {
+                historicalBalances.Add((
+                    Convert.ToInt32(reader.GetValue(0)),
+                    reader.IsDBNull(1)
+                        ? 0m
+                        : Convert.ToDecimal(reader.GetValue(1))
+                ));
+            }
+        }
+
+        if (historicalBalances.Count == 0)
+            throw new InvalidOperationException(
+                "No balances available for HistoricalData.");
+
+        // ============================================
+        // 7. BUILD CLOSING ENTRIES
+        // USING THE SAME TRANSACTION
+        // ============================================
+
+        var entries = BuildClosingEntriesDraft(
+            selectedYearId,
+            retainedEarningsAccountId,
+            tx);
+
+        if (entries.Count == 0)
+            throw new InvalidOperationException(
+                "No Closing Books entries generated.");
+
+        decimal closingTotal = entries
+            .Where(x =>
+                x.Period == ClosingEntryPeriod.ClosingYear)
+            .Sum(x => x.Amount);
+
+        decimal openingTotal = entries
+            .Where(x =>
+                x.Period == ClosingEntryPeriod.OpeningYear)
+            .Sum(x => x.Amount);
+
+        if (closingTotal != 0m || openingTotal != 0m)
+            throw new InvalidOperationException(
+                "Closing or Opening entries are not balanced.");
+
+                // ============================================
+                // 8. CREATE NEXT ACCOUNTING YEAR
+                // ============================================
+                stage = "Creating Next Accounting Year";
+                int newYearId = _yearRepository.InsertAccountingYear(
+                        nextStart,
+                        nextEnd,
+                        tx);
+
+        // ============================================
+        // 9. GENERATE ONE UNIX
+        // ============================================
+
+        var transactionRepository =
+            new TransactionRepository(_connectionFactory);
+
+        long unix = transactionRepository.GetNextUnix(tx);
+
+        // ============================================
+        // 10. POST ALL GENERAL LEDGER ENTRIES
+        // ============================================
+
+        foreach (var entry in entries)
+        {
+            var gl = new GeneralLedger
+            {
+                AccountId = entry.AccountId,
+
+                YearId =
+                    entry.Period == ClosingEntryPeriod.ClosingYear
+                        ? selectedYearId
+                        : newYearId,
+
+                Unix = checked((int)unix),
+                Tdate = entry.Tdate,
+                Ref = entry.Ref,
+                Particulars = entry.Particulars,
+                Amount = entry.Amount,
+                TransactionType = entry.TransactionType,
+                Narration = entry.Narration
+            };
+
+            transactionRepository.InsertGeneralLedger(gl, tx);
+        }
+
+        // ============================================
+        // 11. SAVE HISTORICAL DATA
+        // ============================================
+
+        var historicalRepository =
+            new HistoricalDataRepository();
+        stage = "Inserting HistoricalData";
+                historicalRepository.InsertSnapshot(
+            selectedYearId,
+            startDate,
+            endDate,
+            historicalBalances,
+            tx);
+
+        // ============================================
+        // 12. VERIFY POSTED UNIX
+        // ============================================
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                """
+                SELECT COUNT(*), SUM(Amount)
+                FROM GeneralLedger
+                WHERE [Unix] = ?
+                """;
+
+                    cmd.Parameters.Add(
+                        new OleDbParameter
+                        {
+                            OleDbType = OleDbType.Integer,
+                            Value = checked((int)unix)
+                        });
+
+                    using var reader = cmd.ExecuteReader();
+
+            if (reader == null || !reader.Read())
+                throw new InvalidOperationException(
+                    "Unable to verify posted closing entries.");
+
+            int postedCount =
+                Convert.ToInt32(reader.GetValue(0));
+
+            decimal postedDifference = reader.IsDBNull(1)
+                ? 0m
+                : Convert.ToDecimal(reader.GetValue(1));
+
+            if (postedCount != entries.Count ||
+                postedDifference != 0m)
+                throw new InvalidOperationException(
+                    "Posted Closing Books entries failed verification.");
+        }
+
+        // ============================================
+        // 13. VERIFY HISTORICAL RECORD COUNT
+        // ============================================
+
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.Transaction = tx;
+
+            cmd.CommandText =
+                "SELECT COUNT(*) FROM HistoricalData WHERE YearId = ?";
+
+            cmd.Parameters.AddWithValue("@p1", selectedYearId);
+
+            int historicalCount =
+                Convert.ToInt32(cmd.ExecuteScalar());
+
+            if (historicalCount != historicalBalances.Count)
+                throw new InvalidOperationException(
+                    "HistoricalData record count mismatch.");
+        }
+
+        // ============================================
+        // 14. EVERYTHING PASSED - COMMIT
+        // ============================================
+
+        tx.Commit();
+
+        return (
+            newYearId,
+            unix,
+            entries.Count,
+            historicalBalances.Count
+        );
+    }
+            catch (Exception ex)
+            {
+                try
+                {
+                    tx.Rollback();
+                }
+                catch
+                {
+                    // Preserve original exception.
+                }
+
+                throw new InvalidOperationException(
+                    $"Closing Books failed during:\n{stage}\n\n" +
+                    $"Original Error:\n{ex.Message}",
+                    ex);
+            }
         }
     }
 }

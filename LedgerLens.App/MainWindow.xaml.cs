@@ -542,6 +542,7 @@ public partial class MainWindow : Window
 
             if (answer == MessageBoxResult.Yes)
             {
+
                 var entries = service.BuildClosingEntriesDraft(
                     SessionContext.SelectedYearId,
                     SessionContext.RetainedEarningsId);
@@ -581,6 +582,113 @@ public partial class MainWindow : Window
                     "LedgerLens - Closing Books Draft",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
+                // STEP 7D.9 - FIRST ACTUAL CLOSING BOOKS TEST
+                // STRICTLY FOR DISPOSABLE SCRAP DATABASE
+
+                string databasePath =
+                    System.IO.Path.GetFullPath(
+                        SessionContext.DatabaseFileName);
+
+                string testFileName =
+                    "AASCRAP_CLOSE_TEST.accdb";
+
+                // Prevent accidental posting to other databases.
+
+                bool correctFile =
+                    string.Equals(
+                        System.IO.Path.GetFileName(databasePath),
+                        testFileName,
+                        StringComparison.OrdinalIgnoreCase);
+
+                // Additional protection: no posting inside LiveData.
+
+                bool insideLiveData =
+                    databasePath.Replace('/', '\\')
+                        .Contains(
+                            @"\LiveData\",
+                            StringComparison.OrdinalIgnoreCase);
+
+                if (!correctFile || insideLiveData)
+                {
+                    MessageBox.Show(
+                        "ACTUAL POSTING BLOCKED.\n\n" +
+                        "Posting is permitted only for:\n" +
+                        testFileName + "\n\n" +
+                        "The test file must be outside LiveData.",
+                        "LedgerLens - Safety Check",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                // FINAL CONFIRMATION
+
+                var confirmation = MessageBox.Show(
+                    "ACTUAL DATABASE POSTING\n\n" +
+
+                    $"DATABASE:\n{databasePath}\n\n" +
+
+                    $"Closing YearId: {SessionContext.SelectedYearId}\n" +
+                    $"Closing Date: {SessionContext.SelectedEndDate:dd-MMM-yyyy}\n\n" +
+
+                    $"GeneralLedger Entries: {entries.Count}\n" +
+
+                    "The next accounting year will be created.\n" +
+                    "HistoricalData will be populated.\n\n" +
+
+                    "THIS WILL MODIFY THE TEST DATABASE.\n\n" +
+
+                    "PROCEED WITH CLOSING BOOKS?",
+
+                    "LedgerLens - FINAL CLOSING CONFIRMATION",
+
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirmation != MessageBoxResult.Yes)
+                    return;
+
+                // ATOMIC POSTING
+
+                try
+                {
+                    var result = service.PostClosingBooks(
+                        SessionContext.SelectedYearId,
+                        SessionContext.RetainedEarningsId);
+
+                    MessageBox.Show(
+                        "CLOSING BOOKS SUCCESSFUL!\n\n" +
+
+                        $"New YearId: {result.NewYearId}\n" +
+                        $"UNIX: {result.Unix}\n\n" +
+
+                        $"GeneralLedger Entries: {result.EntriesPosted}\n" +
+                        $"HistoricalData Records: {result.HistoricalRows}\n\n" +
+
+                        "Transaction committed successfully.\n\n" +
+
+                        "Please verify AccountYears, GeneralLedger, " +
+                        "HistoricalData and qryZERO.",
+
+                        "LedgerLens - Closing Books Completed",
+
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "CLOSING BOOKS FAILED.\n\n" +
+                        ex.Message + "\n\n" +
+                        "Check the database before attempting again.",
+
+                        "LedgerLens - Closing Books Error",
+
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+
             }
         }
         catch (Exception ex)

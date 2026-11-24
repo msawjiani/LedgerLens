@@ -53,8 +53,18 @@ namespace LedgerLens.Data.Repositories
 
                 check.Parameters.AddWithValue("@p1", yearId);
 
-                int existing =
-                    Convert.ToInt32(check.ExecuteScalar());
+                int existing;
+
+                try
+                {
+                    existing = Convert.ToInt32(check.ExecuteScalar());
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"HistoricalData duplicate check FAILED. YearId: {yearId}\n" +
+                        ex.Message, ex);
+                }
 
                 if (existing > 0)
                     throw new InvalidOperationException(
@@ -90,9 +100,7 @@ namespace LedgerLens.Data.Repositories
             cmd.Parameters.Add(
                 new OleDbParameter
                 {
-                    OleDbType = OleDbType.Decimal,
-                    Precision = 18,
-                    Scale = 2
+                    OleDbType = OleDbType.Currency
                 });
 
             foreach (var row in balances)
@@ -103,7 +111,20 @@ namespace LedgerLens.Data.Repositories
                 cmd.Parameters[3].Value = row.AccountId;
                 cmd.Parameters[4].Value = row.Balance;
 
-                cmd.ExecuteNonQuery();
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        "HistoricalData INSERT FAILED.\n\n" +
+                        $"YearId: {yearId}\n" +
+                        $"AccountId: {row.AccountId}\n" +
+                        $"Balance: {row.Balance:N2}\n\n" +
+                        $"Original Error: {ex.Message}",
+                        ex);
+                }
             }
         }
     }
