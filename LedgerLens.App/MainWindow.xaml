@@ -137,6 +137,7 @@
                                 Click="SelectIndividual_Click"/>
 
                             <Button Content="Close Books"
+                                Click="CloseBooks_Click"
                                 Style="{StaticResource SidebarButtonStyle}"/>
 
                         </StackPanel>

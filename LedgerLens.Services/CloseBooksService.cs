@@ -30,11 +30,19 @@ namespace LedgerLens.Services
             _connectionFactory = factory;
         }
 
+        public sealed record ClosingValidationSnapshot(
+            decimal TrialBalanceDifference,
+            int UnbalancedUnixCount,
+            decimal RetainedEarningsBalance,
+            int ExistingClosingEntries,
+            string Status);
+
         // STEP 7A.2 - Read-only accounting year validation
 
         public string GetClosingDiagnostic(
             int selectedYearId,
-            int retainedEarningsAccountId)
+            int retainedEarningsAccountId,
+            Action<ClosingValidationSnapshot>? onSnapshot = null)
         {
             var years = _yearRepository.GetAccountingYears();
 
@@ -113,6 +121,8 @@ namespace LedgerLens.Services
             {
                 status = "NOT ELIGIBLE - Cumulative Trial Balance is not balanced.";
             }
+
+
             // STEP 7B.2 - Verify Retained Earnings Account
             // READ ONLY
 
@@ -298,6 +308,55 @@ namespace LedgerLens.Services
                 status =
                     "NOT ELIGIBLE - Retained Earnings balance must be ZERO.";
             }
+            // ============================================
+            // KANAK GUARDRAIL
+            // VERIFY REGULAR TRANSACTIONS EXIST
+            // READ ONLY
+            // ============================================
+
+            int regularTransactionRows;
+
+            using (var connection = _connectionFactory.CreateOpen())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    """
+                    SELECT COUNT(*)
+                    FROM GeneralLedger
+                    WHERE YearId = ?
+                      AND [Tdate] >= ?
+                      AND [Tdate] < ?
+                      AND (
+                          [TransactionType] IS NULL
+                          OR [TransactionType] NOT IN ('R*', 'C*', 'E*')
+                      )
+                    """;
+
+                command.Parameters.AddWithValue(
+                    "@p1", selectedYear.YearId);
+
+                command.Parameters.AddWithValue(
+                    "@p2", selectedYear.StartDate.Date);
+
+                command.Parameters.AddWithValue(
+                    "@p3", selectedYear.EndDate.Date.AddDays(1));
+
+                regularTransactionRows =
+                    Convert.ToInt32(command.ExecuteScalar());
+            }
+
+            if (regularTransactionRows == 0)
+            {
+                status =
+                    "NOT ELIGIBLE - No regular transactions exist " +
+                    "in the selected financial year.";
+            }
+            onSnapshot?.Invoke(new ClosingValidationSnapshot(
+                trialBalanceDifference,
+                unbalancedUnixCount,
+                retainedEarningsBalance,
+                existingClosingEntries,
+                status));
             return
                 $"Selected YearId: {selectedYear.YearId}\n" +
                 $"Financial Year: " +
@@ -792,12 +851,50 @@ PostClosingBooks(
                 throw new InvalidOperationException(
                     "Closing entries already exist for this year.");
         }
+                // ============================================
+                // KANAK GUARDRAIL
+                // REQUIRE ACTUAL TRANSACTIONS IN CLOSING YEAR
+                // ============================================
 
-        // ============================================
-        // 3. VERIFY RETAINED EARNINGS
-        // ============================================
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.Transaction = tx;
 
-        using (var cmd = con.CreateCommand())
+                    cmd.CommandText =
+                        """
+                        SELECT COUNT(*)
+                        FROM GeneralLedger
+                        WHERE YearId = ?
+                          AND [Tdate] >= ?
+                          AND [Tdate] < ?
+                          AND (
+                              [TransactionType] IS NULL
+                              OR [TransactionType] NOT IN ('R*', 'C*', 'E*')
+                          )
+                        """;
+
+                    cmd.Parameters.AddWithValue("@p1", selectedYearId);
+                    cmd.Parameters.AddWithValue("@p2", startDate);
+                    cmd.Parameters.AddWithValue("@p3", endDate.AddDays(1));
+
+                    int actualTransactionRows =
+                        Convert.ToInt32(cmd.ExecuteScalar());
+
+                    if (actualTransactionRows == 0)
+                    {
+                        throw new InvalidOperationException(
+                            "Closing Books is not permitted.\n\n" +
+                            "No regular accounting transactions exist " +
+                            "in the selected financial year.\n\n" +
+                            "Opening entries alone do not qualify.");
+                    }
+                }
+
+                // ============================================
+                // 3. VERIFY RETAINED EARNINGS
+                // ============================================
+
+                using (var cmd = con.CreateCommand())
         {
             cmd.Transaction = tx;
 

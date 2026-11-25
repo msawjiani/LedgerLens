@@ -111,10 +111,15 @@ public partial class MainWindow : Window
 
             ContentArea.Content = selectYearView;
             // STEP 7A.4 - Temporary Closing Books Diagnostic
-            TestCloseBooksDiagnostic();
+            // REMOVED on 25-11-2026 Wednesday
+            //TestCloseBooksDiagnostic();
 
 
         }
+    }
+    private void CloseBooks_Click(object sender, RoutedEventArgs e)
+    {
+        ContentArea.Content = new CloseBooksView();
     }
     private void SharePurchase_Click(object sender, RoutedEventArgs e)
     {
@@ -699,5 +704,23 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+    public void ShowFinancialYearSelection()
+    {
+        var factory = new OleDbConnectionFactory(
+            Options.Create(new OleDbOptions
+            {
+                ConnectionString = SessionContext.ConnectionString
+            }));
+
+        var repository = new AccountYearRepository(factory);
+        var years = repository.GetAccountingYears();
+
+        var selectYearView = new SelectYearView
+        {
+            DataContext = new SelectYearViewModel(years)
+        };
+
+        ContentArea.Content = selectYearView;
     }
 }
