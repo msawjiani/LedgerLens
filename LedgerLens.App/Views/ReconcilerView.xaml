@@ -279,8 +279,33 @@
                                 Width="70"/>
 
                             <DataGridTextColumn Header="REF"
-                                                Binding="{Binding Ref}"
-                                                Width="95"/>
+                                Binding="{Binding Ref}"
+                                Width="115">
+
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+
+                                        <Setter Property="ToolTip">
+                                            <Setter.Value>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <TextBlock
+                                Text="{Binding Unix, StringFormat=UNIX: {0}}"
+                                FontWeight="Bold"/>
+
+                                                        <TextBlock
+                                Text="{Binding Narration}"
+                                TextWrapping="Wrap"
+                                MaxWidth="350"/>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </Setter.Value>
+                                        </Setter>
+
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+
+                            </DataGridTextColumn>
 
                             <DataGridTextColumn Header="PARTICULARS"
                                                 Binding="{Binding Particulars}"
@@ -348,8 +373,33 @@
                                                 Width="105"/>
 
                             <DataGridTextColumn Header="REF"
-                                                Binding="{Binding Ref}"
-                                                Width="95"/>
+                                    Binding="{Binding Ref}"
+                                    Width="115">
+
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+
+                                        <Setter Property="ToolTip">
+                                            <Setter.Value>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <TextBlock
+                                Text="{Binding Unix, StringFormat=UNIX: {0}}"
+                                FontWeight="Bold"/>
+
+                                                        <TextBlock
+                                Text="{Binding Narration}"
+                                TextWrapping="Wrap"
+                                MaxWidth="350"/>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </Setter.Value>
+                                        </Setter>
+
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+
+                            </DataGridTextColumn>
 
                             <DataGridTextColumn Header="PARTICULARS"
                                                 Binding="{Binding Particulars}"

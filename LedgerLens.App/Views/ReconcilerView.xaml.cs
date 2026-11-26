@@ -283,13 +283,47 @@ namespace LedgerLens.App.Views
                     is not List<ReconcilerTransactionRow> sourceEntries ||
                 TargetGrid.ItemsSource
                     is not List<ReconcilerTransactionRow> targetEntries)
-            {
                 return;
-            }
 
-            ReconcilerMatcher.Match(
-                sourceEntries,
-                targetEntries);
+            // Automatic reconciliation
+            ReconcilerMatcher.Match(sourceEntries, targetEntries);
+
+            // Count matched pairs from SOURCE only.
+            // Counting both grids would double the matches.
+
+            int exactMatches = sourceEntries.Count(
+                x => x.MatchType == 1);
+
+            int nearMatches = sourceEntries.Count(
+                x => x.MatchType == 2);
+
+            // Count unmatched transactions on BOTH sides.
+
+            int unmatchedSource = sourceEntries.Count(
+                x => x.MatchType == 0);
+
+            int unmatchedTarget = targetEntries.Count(
+                x => x.MatchType == 0);
+
+            // Debit positive, Credit negative.
+            // Opposite entries should cancel.
+
+            decimal sourceTotal = sourceEntries.Sum(x => x.Amount);
+            decimal targetTotal = targetEntries.Sum(x => x.Amount);
+
+            decimal difference = sourceTotal + targetTotal;
+
+            // Display reconciliation summary.
+
+            ExactMatchesText.Text = exactMatches.ToString();
+
+            NearMatchesText.Text = nearMatches.ToString();
+
+            UnmatchedText.Text =
+                $"{unmatchedSource} / {unmatchedTarget}";
+
+            DifferenceText.Text =
+                difference.ToString("N2");
         }
 
         private void MarkerButton_Click(
@@ -374,6 +408,7 @@ namespace LedgerLens.App.Views
                     break;
             }
         }
+
 
     }
 }
