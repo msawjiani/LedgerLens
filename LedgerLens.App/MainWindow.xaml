@@ -254,6 +254,11 @@
 
                             <Button Content="Subledger Trial Balance"
                             Style="{StaticResource SidebarButtonStyle}"/>
+
+
+                            <Button Content="Reconciler"
+                            Click="Reconciler_Click"
+                            Style="{StaticResource SidebarButtonStyle}"/>
                         </StackPanel>
 
                     </Expander>

@@ -329,6 +329,36 @@ public partial class MainWindow : Window
 
         ContentArea.Content = view;
     }
+    private void SubledgerJournal_Click(
+       object sender,
+       RoutedEventArgs e)
+    {
+        var options = Options.Create(new OleDbOptions
+        {
+            ConnectionString = SessionContext.ConnectionString
+        });
+
+        var factory = new OleDbConnectionFactory(options);
+        //TestShareLots();
+        var view = new SubledgerJournalView
+        {
+            LedgerAccountRepository =
+                new LedgerAccountRepository(factory),
+
+            SubledgerRepository =
+                new SubledgerRepository(factory),
+
+            // STEP 6B - Connect Posting Service
+            SubledgerJournalService =
+                new SubledgerJournalService(
+                    factory,
+                    new TransactionRepository(factory))
+        };
+
+        view.LoadAccounts();
+
+        ContentArea.Content = view;
+    }
     private void ImportExcel_Click(object sender, RoutedEventArgs e)
     {
         var options = Options.Create(new OleDbOptions
@@ -350,6 +380,11 @@ public partial class MainWindow : Window
         };
 
         ContentArea.Content = view;
+    }
+
+    private void Reconciler_Click(object sender, RoutedEventArgs e)
+    {
+        ContentArea.Content = new ReconcilerView();
     }
     // STEP 3B - Temporary Share Sales FIFO Retrieval Test
 
@@ -467,36 +502,7 @@ public partial class MainWindow : Window
                 MessageBoxImage.Error);
         }
     }
-    private void SubledgerJournal_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        var options = Options.Create(new OleDbOptions
-        {
-            ConnectionString = SessionContext.ConnectionString
-        });
-
-        var factory = new OleDbConnectionFactory(options);
-        //TestShareLots();
-        var view = new SubledgerJournalView
-        {
-            LedgerAccountRepository =
-                new LedgerAccountRepository(factory),
-
-            SubledgerRepository =
-                new SubledgerRepository(factory),
-
-            // STEP 6B - Connect Posting Service
-            SubledgerJournalService =
-                new SubledgerJournalService(
-                    factory,
-                    new TransactionRepository(factory))
-        };
-
-        view.LoadAccounts();
-
-        ContentArea.Content = view;
-    }
+   
 
     // STEP 7A.3 - Closing Books Diagnostic
     // READ ONLY - No database modifications
