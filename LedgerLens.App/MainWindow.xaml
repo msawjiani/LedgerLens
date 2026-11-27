@@ -271,7 +271,7 @@
         <!-- RIGHT CONTENT AREA -->
 
         <Grid Grid.Column="1"
-              Background="#0F172A">
+              Background="#E9EDF3">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="56"/>
@@ -279,18 +279,50 @@
             </Grid.RowDefinitions>
 
             <!-- HEADER -->
+            <!-- HEADER -->
 
             <Border Grid.Row="0"
-                    Background="#111827"
-                    BorderBrush="#1F2937"
-                    BorderThickness="0,0,0,1">
+        Background="#F5F7FB"
+        BorderBrush="#E2E8F0"
+        BorderThickness="0,0,0,1">
 
-                <TextBlock Text="Select Individual"
-                           Margin="30,0,0,0"
-                           FontSize="20"
-                           FontWeight="Bold"
-                           Foreground="White"
-                           VerticalAlignment="Center"/>
+                <Grid Margin="30,0">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- INDIVIDUAL -->
+
+                    <TextBlock x:Name="HeaderIndividualText"
+                   Grid.Column="0"
+                   Text="Select Individual"
+                   FontSize="20"
+                   FontWeight="Bold"
+                   Foreground="#183153"
+                   VerticalAlignment="Center"/>
+
+                    <!-- FINANCIAL YEAR -->
+
+                    <TextBlock x:Name="HeaderFinancialYearText"
+                   Grid.Column="1"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   VerticalAlignment="Center"/>
+
+                    <!-- APPLICATION -->
+
+                    <TextBlock Grid.Column="2"
+                   Text="LedgerLens 2.0"
+                   FontSize="15"
+                   Foreground="#64748B"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Center"/>
+
+                </Grid>
 
             </Border>
 
@@ -299,10 +331,10 @@
             <Grid Grid.Row="1"
                   Margin="30">
 
-                <Border Background="#111827"
-                        CornerRadius="14"
-                        BorderBrush="#1F2937"
-                        BorderThickness="1">
+                <Border Background="#F5F7FB"
+                    CornerRadius="14"
+                    BorderBrush="#E2E8F0"
+                    BorderThickness="1">
 
                     <ContentControl x:Name="ContentArea"/>
 

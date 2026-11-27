@@ -13,6 +13,8 @@ namespace LedgerLens.App.Views
             InitializeComponent();
         }
 
+
+
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (DataContext is not ViewModels.SelectYearViewModel vm)
@@ -24,7 +26,12 @@ namespace LedgerLens.App.Views
             SessionContext.SelectedYearId = selectedYear.YearId;
             SessionContext.SelectedStartDate = selectedYear.StartDate;
             SessionContext.SelectedEndDate = selectedYear.EndDate;
+            // DISCO 3.2 - Update Main Window Accounting Header
 
+            if (Window.GetWindow(this) is MainWindow mainWindow)
+            {
+                mainWindow.UpdateAccountingHeader();
+            }
             bool isLatestYear = SessionContext.SelectedYearId == SessionContext.MaxYearId;
 
             MessageBox.Show(

@@ -29,6 +29,16 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = vm;
     }
+
+    public void UpdateAccountingHeader()
+    {
+        HeaderIndividualText.Text =
+            SessionContext.IndividualName;
+
+        HeaderFinancialYearText.Text =
+            $"FY {SessionContext.SelectedStartDate:yyyy}" +
+            $"-{SessionContext.SelectedEndDate:yy}";
+    }
     private void SelectIndividual_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog

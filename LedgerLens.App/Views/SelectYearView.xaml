@@ -1,64 +1,148 @@
 ﻿<UserControl x:Class="LedgerLens.App.Views.SelectYearView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="#111827">
+             Background="#F0F2F6">
 
     <Grid Margin="28">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Margin="0,0,0,20">
+        <!-- TITLE -->
+
+        <StackPanel Grid.Row="0"
+                    Margin="0,0,0,24">
 
             <TextBlock Text="{Binding Title}"
                        FontSize="24"
                        FontWeight="Bold"
-                       Foreground="White"/>
+                       Foreground="#183153"/>
 
             <TextBlock Text="Double-click an accounting year to open books"
-                       Margin="0,6,0,0"
+                       Margin="0,8,0,0"
                        FontSize="14"
-                       Foreground="#9CA3AF"/>
+                       Foreground="#64748B"/>
 
         </StackPanel>
 
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding AccountingYears}"
-                  SelectedItem="{Binding SelectedYear}"
-                  MouseDoubleClick="DataGrid_MouseDoubleClick"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  IsReadOnly="True"
-                  HeadersVisibility="Column"
-                  GridLinesVisibility="Horizontal"
-                  Background="#0F172A"
-                  Foreground="White"
-                  RowBackground="#111827"
-                  AlternatingRowBackground="#0F172A"
-                  BorderBrush="#1F2937"
-                  BorderThickness="1"
-                  FontSize="15">
+        <!-- ACCOUNTING YEARS -->
 
-            <DataGrid.Columns>
+        <Border Grid.Row="1"
+                Background="White"
+                BorderBrush="#E2E8F0"
+                BorderThickness="1"
+                HorizontalAlignment="Left"
+                Width="544"
+                CornerRadius="8"
+                Padding="1">
 
-                <DataGridTextColumn Header="Year ID"
-                                    Binding="{Binding YearId}"
-                                    Width="120"/>
+            <DataGrid ItemsSource="{Binding AccountingYears}"
+                      SelectedItem="{Binding SelectedYear}"
+                      MouseDoubleClick="DataGrid_MouseDoubleClick"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#E2E8F0"
+                      Background="White"
+                      Foreground="#1E293B"
+                      RowBackground="White"
+                      AlternatingRowBackground="#F8FAFC"
+                      AlternationCount="2"
+                      BorderThickness="0"
+                      FontSize="15"
+                      RowHeight="38"
+                      ColumnHeaderHeight="40"
+                      MaxHeight="350">
 
-                <DataGridTextColumn Header="Start Date"
-                                    Binding="{Binding StartDate, StringFormat=dd-MMM-yyyy}"
-                                    Width="180"/>
+                <!-- COLUMN HEADERS -->
 
-                <DataGridTextColumn Header="End Date"
-                                    Binding="{Binding EndDate, StringFormat=dd-MMM-yyyy}"
-                                    Width="180"/>
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background"
+                                Value="#EAF0F7"/>
+                        <Setter Property="Foreground"
+                                Value="#183153"/>
+                        <Setter Property="FontWeight"
+                                Value="SemiBold"/>
+                        <Setter Property="FontSize"
+                                Value="14"/>
+                        <Setter Property="Padding"
+                                Value="12,0,0,0"/>
+                        <Setter Property="BorderBrush"
+                                Value="#DCE4EF"/>
+                        <Setter Property="BorderThickness"
+                                Value="0,0,1,1"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
 
-            </DataGrid.Columns>
+                <!-- CELL STYLE -->
 
-        </DataGrid>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding"
+                                Value="12,0,0,0"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+                        <Setter Property="Foreground"
+                                Value="#1E293B"/>
+
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected"
+                                     Value="True">
+                                <Setter Property="Background"
+                                        Value="#DCEBFA"/>
+                                <Setter Property="Foreground"
+                                        Value="#183153"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+
+                <!-- SELECTED ROW -->
+
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected"
+                                     Value="True">
+                                <Setter Property="Background"
+                                        Value="#DCEBFA"/>
+                            </Trigger>
+                        </Style.Triggers>
+
+                    </Style>
+                </DataGrid.RowStyle>
+
+                <!-- COLUMNS -->
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="YEAR ID"
+                                        Binding="{Binding YearId}"
+                                        Width="140"/>
+
+                    <DataGridTextColumn Header="START DATE"
+                                        Binding="{Binding StartDate,
+                                            StringFormat=dd-MMM-yyyy}"
+                                        Width="200"/>
+
+                    <DataGridTextColumn Header="END DATE"
+                                        Binding="{Binding EndDate,
+                                            StringFormat=dd-MMM-yyyy}"
+                                        Width="200"/>
+
+                </DataGrid.Columns>
+
+            </DataGrid>
+
+        </Border>
 
     </Grid>
 
