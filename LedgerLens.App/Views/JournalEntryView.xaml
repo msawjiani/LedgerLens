@@ -374,6 +374,7 @@
             <TextBlock Grid.Row="1"
            Grid.Column="1"
            Text="{Binding DebitDifference, StringFormat={}{0:N2}}"
+           Foreground="#B91C1C"
            Margin="0,0,10,0"
            HorizontalAlignment="Right"
            FontWeight="Bold"
@@ -384,6 +385,7 @@
            Grid.Column="2"
            Text="{Binding CreditDifference, StringFormat={}{0:N2}}"
            Margin="0,0,10,0"
+           Foreground="#B91C1C"
            HorizontalAlignment="Right"
            FontWeight="Bold"
            FontSize="16"/>
