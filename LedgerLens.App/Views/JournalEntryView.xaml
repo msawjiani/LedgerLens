@@ -5,8 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:LedgerLens.App.Views"
              mc:Ignorable="d" 
+             Background="#F0F2F6"
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Margin="15">
+    <Grid Margin="24">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -17,13 +18,20 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,15">
 
             <TextBlock Text="Journal Entry"
-               FontSize="24"
-               FontWeight="Bold"
-               Foreground="AliceBlue"
-               Margin="0,0,0,15"/>
+                   FontSize="26"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   Margin="0,0,0,20"/>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
+            <!-- DISCO - Journal Transaction Panel -->
+            <Border Background="#E4EAF2"
+                Padding="18"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                CornerRadius="12">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160"/>
                     <ColumnDefinition Width="160"/>
                     <ColumnDefinition Width="*"/>
@@ -38,14 +46,12 @@
                 <!-- DATE -->
                 <!-- DATE LABEL -->
                 <!-- DATE LABEL -->
-                <TextBlock Grid.Row="0"
-           Grid.Column="0"
-           Text="Date"
-           Foreground="White"
-           FontWeight="Bold"
-           FontSize="14"/>
+                    <TextBlock Grid.Row="0"
+                       Grid.Column="0"
+                       Text="Date"
+                       Foreground="#183153"/>
 
-                <!-- DATE INPUT -->
+                    <!-- DATE INPUT -->
                 <TextBox Grid.Row="1"
                          Grid.Column="0"
                          Height="32"
@@ -55,15 +61,12 @@
                         Mode=TwoWay,
                         UpdateSourceTrigger=PropertyChanged}"/>
                 <!-- REFERENCE LABEL -->
-                <!-- REFERENCE LABEL -->
-                <TextBlock Grid.Row="0"
-           Grid.Column="1"
-           Text="Reference"
-           Foreground="White"
-           FontWeight="Bold"
-           FontSize="14"/>
+                    <TextBlock Grid.Row="0"
+                           Grid.Column="1"
+                           Text="Reference"
+                           Foreground="#183153"/>
 
-                <!-- REFERENCE INPUT -->
+                    <!-- REFERENCE INPUT -->
                 <TextBox Grid.Row="1"
                      Grid.Column="1"
                      Height="32"
@@ -75,20 +78,12 @@
 
                 <!-- NARRATION -->
                 <!-- NARRATION LABEL -->
-                <TextBlock Grid.Row="0"
-           Grid.Column="2"
-           Text="Narration"
-           Foreground="White"
-           FontWeight="Bold"
-           FontSize="14"/>
-
-                <!-- NARRATION LABEL -->
-                <TextBlock Grid.Row="0"
-           Grid.Column="2"
-           Text="Narration"
-           Foreground="White"
-           FontWeight="Bold"
-           FontSize="14"/>
+                    <TextBlock Grid.Row="0"
+                       Grid.Column="2"
+                       Text="Narration"
+                       Foreground="#183153"/>
+                    <!-- NARRATION LABEL -->
+    
 
                 <!-- NARRATION INPUT -->
                 <TextBox Grid.Row="1"
@@ -109,28 +104,73 @@
                     FontWeight="Bold"
                     IsEnabled="{Binding IsSaveEnabled}"
                     Click="SaveJournal_Click"/>
+                </Grid>
+            </Border>
 
-            </Grid>
 
-           
         </StackPanel>
 
         <DataGrid Grid.Row="1"
-                    x:Name="JournalGrid"
-                    PreviewKeyDown="JournalGrid_PreviewKeyDown"
-                    ItemsSource="{Binding JournalLines}"
-                    AutoGenerateColumns="False"
-                    CanUserAddRows="False"
-                    CanUserDeleteRows="False"
-                    SelectionUnit="Cell"
-                    RowHeight="36"
-                    FontSize="16"
-                    HeadersVisibility="Column">
+                      x:Name="JournalGrid"
+                      PreviewKeyDown="JournalGrid_PreviewKeyDown"
+                      ItemsSource="{Binding JournalLines}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionUnit="Cell"
+                      RowHeight="36"
+                      FontSize="14"
+                      FontFamily="Segoe UI"
+                      HeadersVisibility="Column"
+                      Background="#E4EAF2"
+                      RowBackground="#E4EAF2"
+                      AlternatingRowBackground="#EDF1F6"
+                      AlternationCount="2"
+                      BorderBrush="#CBD5E1"
+                      BorderThickness="1"
+                      GridLinesVisibility="All"
+                      HorizontalGridLinesBrush="#DCE4EF"
+                      VerticalGridLinesBrush="#CBD5E1"
+                      Foreground="#183153"
+                      ColumnHeaderHeight="38">
+                        <DataGrid.Resources>
 
-                <DataGrid.Columns>
+                            <!-- DISCO - Financial Amount Display -->
+                            <Style x:Key="RightAlignedAmount"
+                       TargetType="TextBlock">
+
+                                <Setter Property="TextAlignment"
+                            Value="Right"/>
+
+                                <Setter Property="VerticalAlignment"
+                            Value="Center"/>
+
+                                <Setter Property="Margin"
+                            Value="0,0,10,0"/>
+
+                            </Style>
+
+                            <!-- DISCO - Financial Amount Editing -->
+                            <Style x:Key="RightAlignedEditing"
+                                TargetType="TextBox">
+
+                                <Setter Property="TextAlignment"
+                                    Value="Right"/>
+
+                                <Setter Property="VerticalContentAlignment"
+                                    Value="Center"/>
+
+                                <Setter Property="Padding"
+                                    Value="0,0,10,0"/>
+
+                            </Style>
+
+                        </DataGrid.Resources>
+            <DataGrid.Columns>
 
                 <!-- ACCOUNT COMBOBOX -->
                 <DataGridTemplateColumn Header="Ledger Account"
+                                     x:Name="ColAccount"
                                     Width="3*">
 
                     <DataGridTemplateColumn.CellTemplate>
@@ -146,6 +186,7 @@
 
                             SelectedValuePath="AccountId"
                             DisplayMemberPath="Account"
+                           
 
                             IsEditable="True"
                             IsTextSearchEnabled="True"
@@ -162,6 +203,9 @@
                 <DataGridTextColumn
                     Header="Debit"
                     Width="*"
+                    x:Name="ColDebit"
+                    ElementStyle="{StaticResource RightAlignedAmount}"
+                    EditingElementStyle="{StaticResource RightAlignedEditing}"
                     Binding="{Binding Debit,
                         Mode=TwoWay,
                         UpdateSourceTrigger=PropertyChanged,
@@ -172,6 +216,9 @@
                 <DataGridTextColumn
                     Header="Credit"
                     Width="*"
+                    x:Name="ColCredit"
+                    ElementStyle="{StaticResource RightAlignedAmount}"
+                    EditingElementStyle="{StaticResource RightAlignedEditing}"
                     Binding="{Binding Credit,
                         Mode=TwoWay,
                         UpdateSourceTrigger=PropertyChanged,
@@ -181,17 +228,49 @@
                 <!-- DELETE JOURNAL ROW -->
                 <DataGridTemplateColumn Header="D"
                         Width="50">
-
+                    
+                    <DataGridTemplateColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment"
+                                Value="Center"/>
+                        </Style>
+                    </DataGridTemplateColumn.HeaderStyle>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
 
                             <Button Content="D"
-                    Width="30"
-                    Height="25"
-                    Background="Crimson"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Click="DeleteJournalLine_Click"/>
+                                Width="32"
+                                x:Name="ColDelete"
+                                Height="28"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Click="DeleteJournalLine_Click"
+                                ToolTip="Delete Journal Line"
+                                Background="#F8D7DA"
+                                Foreground="#842029"
+                                BorderBrush="#E5AEB4"
+                                BorderThickness="1"
+                                FontWeight="SemiBold"
+                                Cursor="Hand">
+
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="7">
+
+                                            <ContentPresenter
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+
+                                        </Border>
+
+                                    </ControlTemplate>
+                                </Button.Template>
+
+                            </Button>
 
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -202,6 +281,8 @@
                 <DataGridTextColumn
                     Header="Current Balance"
                     Width="175"
+                    x:Name="ColCurrentBalance"
+                    ElementStyle="{StaticResource RightAlignedAmount}"
                     IsReadOnly="True"
                     Binding="{Binding CurrentBalance, StringFormat={}{0:N2}}"/>
 
@@ -209,6 +290,8 @@
                 <DataGridTextColumn
                     Header="After Journal"
                     Width="175"
+                    x:Name="ColAfterJournal"
+                    ElementStyle="{StaticResource RightAlignedAmount}"
                     IsReadOnly="True"
                     Binding="{Binding BalanceAfter, StringFormat={}{0:N2}}"/>
 
@@ -218,32 +301,35 @@
         <!-- JOURNAL TOTALS -->
         <Grid Grid.Row="2"
             Margin="0,5,0,0">
-            
-            
+
+
             <Grid.Resources>
                 <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="AliceBlue"/>
+                    <Setter Property="Foreground" Value="#183153"/>
+                    <Setter Property="VerticalAlignment" Value="Center"/>
                 </Style>
             </Grid.Resources>
 
             <Grid.ColumnDefinitions>
-                <!-- Ledger Account -->
-                <ColumnDefinition Width="350"/>
 
-                <!-- Debit -->
-                <ColumnDefinition Width="160"/>
+                <ColumnDefinition
+                        Width="{Binding ActualWidth, ElementName=ColAccount}"/>
 
-                <!-- Credit -->
-                <ColumnDefinition Width="160"/>
+                <ColumnDefinition
+                        Width="{Binding ActualWidth, ElementName=ColDebit}"/>
 
-                <!-- D Button -->
-                <ColumnDefinition Width="50"/>
+                <ColumnDefinition
+                        Width="{Binding ActualWidth, ElementName=ColCredit}"/>
 
-                <!-- Current Balance -->
-                <ColumnDefinition Width="175"/>
+                <ColumnDefinition
+                        Width="{Binding ActualWidth, ElementName=ColDelete}"/>
 
-                <!-- After Journal -->
-                <ColumnDefinition Width="175"/>
+                <ColumnDefinition
+                        Width="{Binding ActualWidth, ElementName=ColCurrentBalance}"/>
+
+                <ColumnDefinition
+                        Width="{Binding ActualWidth, ElementName=ColAfterJournal}"/>
+
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="35"/>
@@ -261,6 +347,7 @@
             <TextBlock Grid.Row="0"
                Grid.Column="1"
                Text="{Binding TotalDebit, StringFormat={}{0:N2}}"
+               Margin="0,0,10,0"
                HorizontalAlignment="Right"
                FontWeight="Bold"
                FontSize="16"/>
@@ -269,6 +356,7 @@
             <TextBlock Grid.Row="0"
                Grid.Column="2"
                Text="{Binding TotalCredit, StringFormat={}{0:N2}}"
+               Margin="0,0,10,0"
                HorizontalAlignment="Right"
                FontWeight="Bold"
                FontSize="16"/>
@@ -286,6 +374,7 @@
             <TextBlock Grid.Row="1"
            Grid.Column="1"
            Text="{Binding DebitDifference, StringFormat={}{0:N2}}"
+           Margin="0,0,10,0"
            HorizontalAlignment="Right"
            FontWeight="Bold"
            FontSize="16"/>
@@ -294,6 +383,7 @@
             <TextBlock Grid.Row="1"
            Grid.Column="2"
            Text="{Binding CreditDifference, StringFormat={}{0:N2}}"
+           Margin="0,0,10,0"
            HorizontalAlignment="Right"
            FontWeight="Bold"
            FontSize="16"/>

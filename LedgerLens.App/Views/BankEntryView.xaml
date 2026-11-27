@@ -167,15 +167,63 @@
                 </StackPanel>
                 <!-- Amount -->
                 <StackPanel Grid.Column="3"
-                    Margin="0,0,12,0">
-                    <TextBlock Text="Amount"
-                       Foreground="#183153"
-                       Margin="0,0,0,5"/>
+            Margin="0,0,12,0">
+
+                    <Grid Margin="0,0,0,5">
+
+                        <TextBlock Text="Amount"
+                   Foreground="#183153"/>
+
+                        <!-- DISCO - Amount Magnitude Indicator -->
+                        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+
+                            <Border x:Name="Mag1K"
+                    Width="9" Height="5"
+                    CornerRadius="1"
+                    Background="#CBD5E1"
+                    Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag10K"
+                    Width="9" Height="5"
+                    CornerRadius="1"
+                    Background="#CBD5E1"
+                    Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag1L"
+                    Width="9" Height="5"
+                    CornerRadius="1"
+                    Background="#CBD5E1"
+                    Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag10L"
+                    Width="9" Height="5"
+                    CornerRadius="1"
+                    Background="#CBD5E1"
+                    Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag1Cr"
+                    Width="9" Height="5"
+                    CornerRadius="1"
+                    Background="#CBD5E1"
+                    Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag10Cr"
+                    Width="9" Height="5"
+                    CornerRadius="1"
+                    Background="#CBD5E1"/>
+
+                        </StackPanel>
+
+                    </Grid>
 
                     <TextBox Height="32"
-                             Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
-                             TextAlignment="Right"
-                             VerticalContentAlignment="Center"/>
+                     Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
+                     TextAlignment="Right"
+                     TextChanged="Amount_TextChanged"
+                     VerticalContentAlignment="Center"/>
+
                 </StackPanel>
 
                 <!-- Receipt / Payment -->
