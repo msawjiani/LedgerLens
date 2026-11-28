@@ -19,7 +19,7 @@
                    Grid.Row="0"
                    FontWeight="SemiBold"
                    Foreground="#183153"
-                   Margin="0,0,0,20"/>
+                   Margin="0,0,0,12"/>
 
         <!-- ACCOUNTS -->
         <!-- ACCOUNTS -->
@@ -29,8 +29,8 @@
                 BorderBrush="#CBD5E1"
                 BorderThickness="1"
                 CornerRadius="12"
-                Padding="18"
-                Margin="0,0,0,15">
+                Padding="12"
+                Margin="0,0,0,8">
 
             <StackPanel>
 
@@ -83,7 +83,7 @@
                     BorderBrush="#CBD5E1"
                     BorderThickness="1"
                     CornerRadius="12"
-                    Padding="18">
+                    Padding="12">
 
                 <StackPanel>
 
@@ -91,7 +91,7 @@
                            FontSize="20"
                            FontWeight="SemiBold"
                            Foreground="#183153"
-                           Margin="0,0,0,15"/>
+                           Margin="0,0,0,8"/>
 
                     <Grid>
 
@@ -177,7 +177,7 @@
                         BorderBrush="#CBD5E1"
                         BorderThickness="1"
                         CornerRadius="12"
-                        Padding="18">
+                        Padding="12">
 
                 <StackPanel>
 
@@ -185,7 +185,7 @@
                            FontSize="20"
                            FontWeight="SemiBold"
                            Foreground="#183153"
-                           Margin="0,0,0,15"/>
+                           Margin="0,0,0,8"/>
 
                     <Grid VerticalAlignment="Top">
 
@@ -276,7 +276,7 @@
                     BorderThickness="1"
                     Grid.Row="3"
                     CornerRadius="12"
-                    Padding="18"
+                    Padding="12"
                     Margin="0,0,0,15">
             <Grid>
 
@@ -290,7 +290,7 @@
                            Grid.Row="0"
                            FontWeight="SemiBold"
                            Foreground="#183153"
-                           Margin="0,0,0,15"/>
+                           Margin="0,0,0,8"/>
 
                 <DataGrid x:Name="CompaniesDataGrid"
                           Grid.Row="1"
@@ -310,8 +310,8 @@
                           Foreground="#183153"
                           FontFamily="Segoe UI"
                           FontSize="14"
-                          RowHeight="30"
-                          ColumnHeaderHeight="38">
+                          RowHeight="26"
+                          ColumnHeaderHeight="32">
 
                     <DataGrid.Columns>
 

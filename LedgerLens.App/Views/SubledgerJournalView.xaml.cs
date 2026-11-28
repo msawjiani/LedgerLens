@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using LedgerLens.Services;
+using System.Windows.Media;
 
 namespace LedgerLens.App.Views
 {
@@ -375,6 +376,39 @@ namespace LedgerLens.App.Views
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
+        }
+        // DISCO - Amount Magnitude Indicator
+        private void Amount_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox textBox || Mag10Cr == null)
+                return;
+
+            decimal.TryParse(
+                textBox.Text,
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out decimal amount);
+
+            Brush inactive = new SolidColorBrush(
+                Color.FromRgb(203, 213, 225));
+
+            Mag1K.Background = amount >= 1000
+                ? Brushes.LimeGreen : inactive;
+
+            Mag10K.Background = amount >= 10000
+                ? Brushes.DodgerBlue : inactive;
+
+            Mag1L.Background = amount >= 100000
+                ? Brushes.MediumPurple : inactive;
+
+            Mag10L.Background = amount >= 1000000
+                ? Brushes.Gold : inactive;
+
+            Mag1Cr.Background = amount >= 10000000
+                ? Brushes.DarkOrange : inactive;
+
+            Mag10Cr.Background = amount >= 100000000
+                ? Brushes.Red : inactive;
         }
     }
 }

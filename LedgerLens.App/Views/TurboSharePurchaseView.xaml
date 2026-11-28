@@ -1,104 +1,164 @@
 ﻿<UserControl x:Class="LedgerLens.App.Views.TurboSharePurchaseView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
+             Background="#F0F2F6">
 
-    <Grid Margin="20">
+    <Grid Margin="24">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- HEADER -->
-        <Grid Grid.Row="0" Margin="0,0,0,15">
+        <!-- DISCO - Header and Import Details -->
+        <StackPanel Grid.Row="0"
+            Margin="0,0,0,15">
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+            <TextBlock Text="TURBO Share Purchase"
+               FontSize="26"
+               FontWeight="SemiBold"
+               Foreground="#183153"
+               Margin="0,0,0,20"/>
 
-            <StackPanel Grid.Column="0">
+            <Border Background="#E4EAF2"
+            BorderBrush="#CBD5E1"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="12">
 
-                <TextBlock Text="TURBO SHARE PURCHASE"
-                           FontSize="24"
-                           FontWeight="Bold"
-                           Foreground="#243B53"/>
+                <Grid>
 
-                <TextBlock Text="Import Share Purchases from Excel"
-                           FontSize="13"
-                           Foreground="Gray"
-                           Margin="0,5,0,0"/>
-                            <StackPanel Orientation="Horizontal"
-                                Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="15"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
 
-                                        <StackPanel Width="160" Margin="0,0,15,0">
-                                            <TextBlock Text="Reference"/>
-                                            <TextBox x:Name="BatchReferenceTextBox"
-                                     Height="28"
-                                     Margin="0,4,0,0"/>
+                    <!-- Reference -->
+                    <StackPanel Grid.Column="0">
+
+                        <TextBlock Text="Reference"
+                           Foreground="#183153"
+                           Margin="0,0,0,5"/>
+
+                        <TextBox x:Name="BatchReferenceTextBox"
+                         Height="32"
+                         VerticalContentAlignment="Center"/>
+
                     </StackPanel>
 
-                    <StackPanel Width="380">
-                        <TextBlock Text="Narration"/>
+                    <!-- Narration -->
+                    <StackPanel Grid.Column="2">
+
+                        <TextBlock Text="Narration"
+                           Foreground="#183153"
+                           Margin="0,0,0,5"/>
+
                         <TextBox x:Name="BatchNarrationTextBox"
-                 Height="28"
-                 Margin="0,4,0,0"/>
+                         Height="32"
+                         VerticalContentAlignment="Center"/>
+
                     </StackPanel>
 
-                </StackPanel>
-            </StackPanel>
+                    <!-- Select Excel -->
+                    <Button x:Name="SelectExcelButton"
+                    Grid.Column="4"
+                    Content="SELECT EXCEL"
+                    Height="32"
+                    VerticalAlignment="Bottom"
+                    Background="#2878B5"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    Click="SelectExcelButton_Click"/>
 
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Center">
+                    <!-- Import -->
+                    <Button x:Name="ImportButton"
+                    Grid.Column="6"
+                    Content="IMPORT"
+                    Height="32"
+                    VerticalAlignment="Bottom"
+                    Background="#21865B"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    Click="ImportButton_Click"
+                    IsEnabled="False"/>
 
-                <Button x:Name="SelectExcelButton"
-                        Content="SELECT EXCEL"
-                        Width="140"
-                        Height="35"
-                        Margin="0,0,10,0"
-                        Background="#2878B5"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        Click="SelectExcelButton_Click"/>
+                </Grid>
 
-                <Button x:Name="ImportButton"
-                        Content="IMPORT"
-                        Width="110"
-                        Height="35"
-                        Background="#21865B"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        Click="ImportButton_Click"
-                        IsEnabled="False"/>
+            </Border>
 
-            </StackPanel>
-
-        </Grid>
+        </StackPanel>
 
         <!-- IMPORT GRID -->
-        <GroupBox Grid.Row="1"
-                  Header="Excel Share Purchases"
-                  FontWeight="SemiBold"
-                  Padding="10"
-                  Margin="0,0,0,15">
+        <!-- DISCO - Excel Share Purchases Panel -->
+        <Border Grid.Row="1"
+        Background="#E4EAF2"
+        BorderBrush="#CBD5E1"
+        BorderThickness="1"
+        CornerRadius="12"
+        Padding="12"
+        Margin="0,0,0,15">
 
-            <DataGrid x:Name="TurboGrid"
-                      Height="340"
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                   Text="Excel Share Purchases"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   Margin="0,0,0,8"/>
+
+                <DataGrid x:Name="TurboGrid"
+                      Grid.Row="1"
+                      
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       CanUserAddRows="False"
                       SelectionMode="Single"
+                      HeadersVisibility="Column"
+                      Background="#E4EAF2"
+                      RowBackground="#E4EAF2"
+                      AlternatingRowBackground="#EDF1F6"
+                      AlternationCount="2"
+                      BorderBrush="#CBD5E1"
+                      BorderThickness="1"
+                      GridLinesVisibility="None"
+                      Foreground="#183153"
+                      FontFamily="Segoe UI"
+                      FontSize="14"
                       RowHeight="30"
                       ColumnHeaderHeight="35"
-                      FontSize="13"
-                      AlternatingRowBackground="#EEF4FA"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Auto">
+                    <DataGrid.Resources>
 
-                <DataGrid.Columns>
+                        <!-- DISCO - Right Aligned Financial Amounts -->
+                                <Style x:Key="RightAlignedAmount"
+                                   TargetType="TextBlock">
+
+                                    <Setter Property="TextAlignment"
+                                    Value="Right"/>
+
+                                    <Setter Property="VerticalAlignment"
+                                    Value="Center"/>
+
+                                    <Setter Property="Margin"
+                                    Value="0,0,10,0"/>
+
+                                </Style>
+
+                    </DataGrid.Resources>
+                    <DataGrid.Columns>
 
                     <DataGridTextColumn Header="Row"
                                         Binding="{Binding ExcelRowNumber}"
@@ -121,19 +181,22 @@
                                         Binding="{Binding TradeDate, StringFormat={}{0:dd-MMM-yyyy}}"
                                         Width="110"/>
 
-                    <DataGridTextColumn Header="Quantity"
-                                        Binding="{Binding Qty, StringFormat={}{0:0.######}}"
-                                        Width="100"/>
+                        <DataGridTextColumn Header="Quantity"
+                                Binding="{Binding Qty, StringFormat={}{0:0.######}}"
+                                ElementStyle="{StaticResource RightAlignedAmount}"
+                                Width="100"/>
 
-                    <DataGridTextColumn Header="Rate"
-                                        Binding="{Binding Rate, StringFormat={}{0:0.######}}"
-                                        Width="100"/>
+                        <DataGridTextColumn Header="Rate"
+                                Binding="{Binding Rate, StringFormat={}{0:0.######}}"
+                                ElementStyle="{StaticResource RightAlignedAmount}"
+                                Width="100"/>
 
-                    <DataGridTextColumn Header="Amount"
-                                        Binding="{Binding Amt, StringFormat={}{0:N2}}"
-                                        Width="110"/>
+                        <DataGridTextColumn Header="Amount"
+                                Binding="{Binding Amt, StringFormat={}{0:N2}}"
+                                ElementStyle="{StaticResource RightAlignedAmount}"
+                                Width="110"/>
 
-                    <DataGridTextColumn Header="Error"
+                        <DataGridTextColumn Header="Error"
                                         Binding="{Binding ErrorMessage}"
                                         Width="180">
 
@@ -151,35 +214,71 @@
                     </DataGridTextColumn>
 
                     <!-- DELETE ROW -->
-                    <DataGridTemplateColumn Header="Action"
-                                            Width="70">
+                        <!-- DISCO - DELETE ROW -->
+                        <DataGridTemplateColumn Header="D"
+                        Width="55">
 
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="D"
-                                    Width="30"
-                                    Height="25"
-                                    Background="#A32D41"
-                                    Foreground="White"
-                                    FontWeight="Bold"
-                                    Click="DeleteRow_Click"/>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="HorizontalContentAlignment"
+                    Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
 
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
 
-                    </DataGridTemplateColumn>
+                                    <Button Content="D"
+                    Width="32"
+                    Height="25"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#F8D7DA"
+                    Foreground="#842029"
+                    BorderBrush="#E5AEB4"
+                    BorderThickness="1"
+                    FontWeight="SemiBold"
+                    Cursor="Hand"
+                    ToolTip="Remove Excel Row"
+                    Click="DeleteRow_Click">
 
-                </DataGrid.Columns>
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+
+                                                <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7">
+
+                                                    <ContentPresenter
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+
+                                                </Border>
+
+                                            </ControlTemplate>
+                                        </Button.Template>
+
+                                    </Button>
+
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
 
             </DataGrid>
 
-        </GroupBox>
+            </Grid>
+        </Border>
 
         <!-- IMPORT SUMMARY -->
         <Border Grid.Row="2"
-                Background="#EEF4FA"
-                Padding="15"
-                CornerRadius="5">
+            Background="#E4EAF2"
+            BorderBrush="#CBD5E1"
+            BorderThickness="1"
+            Padding="12"
+            CornerRadius="12">
 
             <Grid>
 
@@ -193,6 +292,7 @@
                 <TextBlock x:Name="TotalRowsText"
                            Grid.Column="0"
                            Text="Rows: 0"
+                           Foreground="#183153"
                            FontWeight="SemiBold"/>
 
                 <TextBlock x:Name="ValidRowsText"
@@ -210,10 +310,10 @@
                 <TextBlock x:Name="TotalAmountText"
                            Grid.Column="3"
                            Text="Total Amount: ₹0.00"
+                           Foreground="#183153"
                            HorizontalAlignment="Right"
                            FontWeight="Bold"
-                           FontSize="15"
-                           Foreground="#243B53"/>
+                           FontSize="15"/>
 
             </Grid>
 

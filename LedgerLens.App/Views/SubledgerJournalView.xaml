@@ -1,9 +1,9 @@
 ﻿<UserControl x:Class="LedgerLens.App.Views.SubledgerJournalView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="#F4F6FA">
+             Background="#F0F2F6">
 
-    <Grid Margin="20">
+    <Grid Margin="24">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,27 +16,34 @@
 
         <!-- HEADER -->
 
-        <TextBlock Grid.Row="0"
-                   Text="SUBLEDGER JOURNAL"
-                   FontSize="25"
-                   FontWeight="Bold"
-                   Foreground="#172B4D"/>
-
-        <TextBlock Grid.Row="1"
-                   Text="Journal entries linked to individual subledger accounts"
-                   FontSize="13"
-                   Foreground="#64748B"
-                   Margin="0,4,0,15"/>
+        <!-- DISCO - Subledger Journal Heading -->
+                <TextBlock Grid.Row="0"
+                   Text="Subledger Journal"
+                   FontSize="26"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   Margin="0,0,0,20"/>
 
         <!-- ACCOUNT SELECTION -->
 
+        <!-- DISCO - Account Information Panel -->
         <Border Grid.Row="2"
-                Background="White"
-                CornerRadius="10"
-                Padding="15"
+                Background="#E4EAF2"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="12"
                 Margin="0,0,0,10">
 
-            <Grid>
+            <StackPanel>
+
+                <TextBlock Text="Account Information"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   Margin="0,0,0,8"/>
+
+                <Grid>
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -46,106 +53,172 @@
 
                 <StackPanel Grid.Column="0">
 
-                    <TextBlock Text="CREDIT ACCOUNT (GL)"
-                               FontWeight="SemiBold"
+                        <TextBlock Text="Credit Account (GL)"
+                               Foreground="#183153"
                                Margin="0,0,0,6"/>
 
-                    <ComboBox x:Name="CreditAccountCombo"
+                        <ComboBox x:Name="CreditAccountCombo"
                               Height="34"
+                              VerticalContentAlignment="Center"
                               FontSize="14"/>
 
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
 
-                    <TextBlock Text="DEBIT ACCOUNT (GL)"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,6"/>
+                        <TextBlock Text="Debit Account (GL)"
+                           Foreground="#183153"
+                           Margin="0,0,0,6"/>
 
-                    <ComboBox x:Name="DebitAccountCombo"
+                        <ComboBox x:Name="DebitAccountCombo"
                           Height="34"
+                          VerticalContentAlignment="Center"
                           FontSize="14"
                           SelectionChanged="DebitAccountCombo_SelectionChanged"/>
 
                 </StackPanel>
 
-            </Grid>
-
+                </Grid>
+            </StackPanel>
         </Border>
 
         <!-- JOURNAL DETAILS -->
 
+        <!-- DISCO - Transaction Details Panel -->
         <Border Grid.Row="3"
-                Background="White"
-                CornerRadius="10"
-                Padding="15"
+                Background="#E4EAF2"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="12"
                 Margin="0,0,0,10">
 
-            <Grid>
+            <StackPanel>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.1*"/>
-                    <ColumnDefinition Width="1.1*"/>
-                    <ColumnDefinition Width="2.5*"/>
-                    <ColumnDefinition Width="1.2*"/>
-                </Grid.ColumnDefinitions>
+                <TextBlock Text="Transaction Details"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   Margin="0,0,0,8"/>
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                <Grid>
 
-                <TextBlock Grid.Column="0"
-                           Text="DATE"
-                           FontWeight="SemiBold"/>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.1*"/>
+                        <ColumnDefinition Width="1.1*"/>
+                        <ColumnDefinition Width="2.5*"/>
+                        <ColumnDefinition Width="1.2*"/>
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="1"
-                           Text="REFERENCE"
-                           FontWeight="SemiBold"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <TextBlock Grid.Column="2"
-                           Text="NARRATION"
-                           FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="0"
+                       Text="Date"
+                       Foreground="#183153"/>
 
-                <TextBlock Grid.Column="3"
-                           Text="AMOUNT"
-                           FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="1"
+                       Text="Reference"
+                       Foreground="#183153"/>
 
-                <TextBox x:Name="DateTextBox"
+                    <TextBlock Grid.Column="2"
+                       Text="Narration"
+                       Foreground="#183153"/>
+
+                    <!-- DISCO - Amount with Equalizer -->
+                    <Grid Grid.Column="3">
+
+                        <TextBlock Text="Amount"
+                                Foreground="#183153"/>
+
+                        <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+
+                            <Border x:Name="Mag1K"
+                                Width="9" Height="5"
+                                CornerRadius="1"
+                                Background="#CBD5E1"
+                                Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag10K"
+                                Width="9" Height="5"
+                                CornerRadius="1"
+                                Background="#CBD5E1"
+                                Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag1L"
+                                Width="9" Height="5"
+                                CornerRadius="1"
+                                Background="#CBD5E1"
+                                Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag10L"
+                                Width="9" Height="5"
+                                CornerRadius="1"
+                                Background="#CBD5E1"
+                                Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag1Cr"
+                                Width="9" Height="5"
+                                CornerRadius="1"
+                                Background="#CBD5E1"
+                                Margin="0,0,2,0"/>
+
+                            <Border x:Name="Mag10Cr"
+                                Width="9" Height="5"
+                                CornerRadius="1"
+                                Background="#CBD5E1"/>
+
+                        </StackPanel>
+
+                    </Grid>
+
+                    <TextBox x:Name="DateTextBox"
                          Grid.Row="1"
                          Grid.Column="0"
                          Height="34"
+                         VerticalContentAlignment="Center"
                          Margin="0,6,12,0"/>
 
-                <TextBox x:Name="ReferenceTextBox"
+                    <TextBox x:Name="ReferenceTextBox"
                          Grid.Row="1"
                          Grid.Column="1"
                          Height="34"
+                         VerticalContentAlignment="Center"
                          Margin="0,6,12,0"/>
 
-                <TextBox x:Name="NarrationTextBox"
+                    <TextBox x:Name="NarrationTextBox"
                          Grid.Row="1"
                          Grid.Column="2"
                          Height="34"
+                         VerticalContentAlignment="Center"
                          Margin="0,6,12,0"/>
 
-                <TextBox x:Name="AmountTextBox"
+                    <TextBox x:Name="AmountTextBox"
                          Grid.Row="1"
                          Grid.Column="3"
                          Height="34"
                          Margin="0,6,0,0"
-                         HorizontalContentAlignment="Right"/>
+                         TextAlignment="Right"
+                         VerticalContentAlignment="Center"
+                         TextChanged="Amount_TextChanged"/>
 
-            </Grid>
-
+                </Grid>
+            </StackPanel>
         </Border>
 
         <!-- SUBLEDGER SECTION -->
 
+        <!-- DISCO - Subledger Selection Panel -->
         <Border Grid.Row="4"
-                Background="White"
-                CornerRadius="10"
-                Padding="15"
+                Background="#E4EAF2"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="12"
                 Margin="0,0,0,10">
 
             <Grid>
@@ -157,48 +230,56 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0"
-                           Text="SELECT SUBLEDGER"
-                           FontSize="15"
-                           FontWeight="Bold"
-                           Foreground="#172B4D"
-                           Margin="0,0,0,10"/>
+                   Text="Select Subledger"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="#183153"
+                   Margin="0,0,0,8"/>
 
                 <!-- ONLY THIS GRID SCROLLS -->
 
                 <DataGrid x:Name="SubledgerGrid"
-                          Grid.Row="1"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          RowHeight="30"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
-                          AlternatingRowBackground="#F1F5F9"
-                          Background="White"
-                          SelectionChanged="SubledgerGrid_SelectionChanged"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                      Grid.Row="1"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      HeadersVisibility="Column"
+                      Background="#E4EAF2"
+                      RowBackground="#E4EAF2"
+                      AlternatingRowBackground="#EDF1F6"
+                      AlternationCount="2"
+                      BorderBrush="#CBD5E1"
+                      BorderThickness="1"
+                      GridLinesVisibility="None"
+                      Foreground="#183153"
+                      FontFamily="Segoe UI"
+                      FontSize="14"
+                      RowHeight="26"
+                      ColumnHeaderHeight="32"
+                      SelectionChanged="SubledgerGrid_SelectionChanged"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto">
 
                     <DataGrid.Columns>
 
                         <DataGridTextColumn Header="ID"
-                                            Binding="{Binding SubledgerId}"
-                                            Width="100"/>
+                        Binding="{Binding SubledgerId}"
+                        Width="100"/>
 
-                        <DataGridTextColumn Header="SUBLEDGER DESCRIPTION"
-                                            Binding="{Binding Subaccount}"
-                                            Width="*"/>
+                        <DataGridTextColumn Header="Subledger Description"
+                        Binding="{Binding Subaccount}"
+                        Width="*"/>
 
                     </DataGrid.Columns>
 
                 </DataGrid>
-
                 <TextBlock x:Name="SelectedSubledgerText"
-                           Grid.Row="2"
-                           Text="No subledger selected"
-                           Margin="0,10,0,0"
-                           FontSize="13"
-                           Foreground="#64748B"/>
+                       Grid.Row="2"
+                       Text="No subledger selected"
+                       Margin="0,10,0,0"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="#183153"/>
 
             </Grid>
 
